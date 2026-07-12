@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="BossAI Radar Lite - 自动采集海外公开商业证据并生成机会日报" />
+    <title>BossAI Radar Lite</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">B</div>
+          <div>
+            <strong>BossAI Radar</strong>
+            <span>LITE · SOURCE AVAILABLE</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a class="nav-item active" href="#overview"><span>01</span>CEO 总览</a>
+          <a class="nav-item" href="#opportunities"><span>02</span>机会优先级</a>
+          <a class="nav-item" href="#evidence"><span>03</span>证据库</a>
+          <a class="nav-item" href="#operations"><span>04</span>运行状态</a>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="signal-dot"></span>
+          <div>
+            <strong>源码开放非商业版</strong>
+            <p>学习、研究、评估免费。商业使用须获得 BossAI 书面授权。</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">OVERSEAS BUSINESS INTELLIGENCE</p>
+            <h1>今天，市场在为什么付钱？</h1>
+          </div>
+          <div class="top-actions">
+            <button class="button ghost" id="licenseButton" type="button">商业授权</button>
+            <button class="button ghost" id="demoButton" type="button">载入演示</button>
+            <a class="button ghost report-button" href="/api/report/latest.md">下载日报</a>
+            <button class="button primary" id="scanButton" type="button">
+              <span class="button-icon">↻</span>
+              立即扫描
+            </button>
+          </div>
+        </header>
+
+        <section class="hero" id="overview">
+          <div class="hero-copy">
+            <div class="status-line">
+              <span class="status-pill" id="systemStatus">正在连接</span>
+              <span id="lastRunText">读取上次扫描状态…</span>
+            </div>
+            <h2 id="executiveSummary">系统正在读取公开市场证据并生成 CEO 结论。</h2>
+            <p>不是新闻聚合。只保留能转化为产品、服务、报价和销售动作的证据。</p>
+          </div>
+          <div class="hero-score">
+            <span>TOP SIGNAL</span>
+            <strong id="topScore">--</strong>
+            <small>/ 100</small>
+          </div>
+        </section>
+
+        <section class="metrics" aria-label="核心指标">
+          <article class="metric-card">
+            <span>累计公开证据</span>
+            <strong id="evidenceMetric">0</strong>
+            <small>已去重并持久保存</small>
+          </article>
+          <article class="metric-card">
+            <span>商业机会</span>
+            <strong id="opportunityMetric">0</strong>
+            <small>按证据强度排序</small>
+          </article>
+          <article class="metric-card">
+            <span>覆盖来源</span>
+            <strong id="sourceMetric">0</strong>
+            <small>Reddit · HN · GitHub</small>
+          </article>
+          <article class="metric-card">
+            <span>扫描次数</span>
+            <strong id="runMetric">0</strong>
+            <small>自动与手动运行审计</small>
+          </article>
+        </section>
+
+        <section class="section" id="opportunities">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">DECISION QUEUE</p>
+              <h3>机会优先级</h3>
+            </div>
+            <div class="legend">
+              <span><i class="legend-dot build"></i>BUILD</span>
+              <span><i class="legend-dot service"></i>SELL SERVICE</span>
+              <span><i class="legend-dot watch"></i>WATCH</span>
+            </div>
+          </div>
+          <div class="opportunity-grid" id="opportunityGrid">
+            <div class="empty-state">尚无机会数据，首次自动扫描完成后会在这里显示。</div>
+          </div>
+        </section>
+
+        <section class="two-column">
+          <div class="section panel" id="evidence">
+            <div class="section-heading compact">
+              <div>
+                <p class="eyebrow">EVIDENCE STREAM</p>
+                <h3>高价值证据</h3>
+              </div>
+              <button class="text-button" id="refreshButton" type="button">刷新</button>
+            </div>
+            <div class="evidence-list" id="evidenceList">
+              <div class="empty-state">暂无证据。</div>
+            </div>
+          </div>
+
+          <div class="section panel" id="operations">
+            <div class="section-heading compact">
+              <div>
+                <p class="eyebrow">OPERATIONS</p>
+                <h3>来源与调度</h3>
+              </div>
+            </div>
+            <div class="source-list" id="sourceList"></div>
+            <div class="schedule-card">
+              <span>下一次自动扫描</span>
+              <strong id="nextRunText">未启用</strong>
+              <small id="scheduleText">读取配置中…</small>
+            </div>
+            <div class="run-history" id="runHistory"></div>
+          </div>
+        </section>
+
+        <footer>
+          <span>BossAI Radar Lite v0.2.0</span>
+          <span>源码开放 · 非商业许可 · 商业使用需授权</span>
+        </footer>
+      </main>
+    </div>
+
+    <dialog class="license-dialog" id="licenseDialog">
+      <form method="dialog" class="license-card">
+        <button class="dialog-close" value="close" aria-label="关闭">×</button>
+        <p class="eyebrow">COMMERCIAL LICENSE</p>
+        <h3>商业使用必须单独授权</h3>
+        <p class="license-intro">Lite 版源码可用于个人学习、研究和非商业评估。以下场景不在免费许可范围内。</p>
+        <div class="license-grid">
+          <div><strong>需要授权</strong><span>SaaS 收费、咨询交付、付费课程打包、企业经营使用、白标部署、二次销售。</span></div>
+          <div><strong>商业版可提供</strong><span>更多情报源、团队权限、消息推送、行业模板、CRM、托管部署和商业支持。</span></div>
+        </div>
+        <a class="button primary license-cta" id="licenseContact" href="#">联系获取商业授权</a>
+        <small>本项目是 source-available 非商业许可，不是 OSI 标准开源许可证。</small>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose a non-commercial Lite improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the user problem, not only the requested implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Provide public, lawful, non-sensitive evidence when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: license-impact
+    attributes:
+      label: License / product boundary impact
+      options:
+        - Fits the non-commercial Lite scope
+        - May belong in commercial Pro
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: source-compliance
+    attributes:
+      label: Data-source compliance
+      description: For a new collector, state the public API/feed, authentication boundary, limits, and prohibited behavior.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The proposal does not require bypassing login, CAPTCHA, access controls, or platform restrictions.
+          required: true
+        - label: Any demo data will be synthetic and clearly marked.
+          required: true

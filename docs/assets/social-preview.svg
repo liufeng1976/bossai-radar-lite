@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">BossAI Radar Lite</title>
+  <desc id="desc">Source-available non-commercial overseas business opportunity radar</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07101f"/>
+      <stop offset="1" stop-color="#0e2342"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#72a7ff"/>
+      <stop offset="1" stop-color="#326bdc"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="1055" cy="100" r="190" fill="#3d7cec" opacity=".16" filter="url(#glow)"/>
+  <circle cx="310" cy="610" r="190" fill="#27b8cc" opacity=".07" filter="url(#glow)"/>
+  <g opacity=".07" stroke="#b8d1ff">
+    <path d="M0 80H1280M0 160H1280M0 240H1280M0 320H1280M0 400H1280M0 480H1280M0 560H1280"/>
+    <path d="M80 0V640M160 0V640M240 0V640M320 0V640M400 0V640M480 0V640M560 0V640M640 0V640M720 0V640M800 0V640M880 0V640M960 0V640M1040 0V640M1120 0V640M1200 0V640"/>
+  </g>
+  <g transform="translate(76 70)">
+    <rect width="72" height="72" rx="19" fill="url(#accent)"/>
+    <text x="36" y="49" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="39" font-weight="800">B</text>
+    <text x="94" y="29" fill="#f4f7fc" font-family="Arial, sans-serif" font-size="27" font-weight="800">BossAI Radar Lite</text>
+    <text x="95" y="55" fill="#8198b9" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="2">SOURCE AVAILABLE · NON-COMMERCIAL</text>
+  </g>
+  <g transform="translate(76 206)">
+    <text fill="#f6f9ff" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="58" font-weight="800">
+      <tspan x="0" y="0">今天，市场在为什么付钱？</tspan>
+    </text>
+    <text fill="#91a7c6" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="20">
+      <tspan x="0" y="52">自动采集公开证据 · 确定性机会评分 · CEO 行动日报</tspan>
+    </text>
+  </g>
+  <g transform="translate(76 350)">
+    <rect width="1128" height="194" rx="24" fill="#0d1c33" stroke="#2b4d7e"/>
+    <g transform="translate(28 28)">
+      <rect width="318" height="138" rx="16" fill="#122643"/>
+      <rect x="18" y="17" width="54" height="20" rx="10" fill="#163c38"/>
+      <text x="45" y="31" text-anchor="middle" fill="#67d9aa" font-family="Arial, sans-serif" font-size="9" font-weight="800">BUILD</text>
+      <text x="18" y="69" fill="#f5f8fd" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="20" font-weight="700">电商 AI 客服副驾驶</text>
+      <text x="18" y="98" fill="#8095b3" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="12">跨来源证据 + 明确付费意愿</text>
+      <rect x="18" y="116" width="282" height="5" rx="3" fill="#1f3655"/>
+      <rect x="18" y="116" width="246" height="5" rx="3" fill="#4d8dff"/>
+    </g>
+    <g transform="translate(374 28)">
+      <rect width="318" height="138" rx="16" fill="#122643"/>
+      <rect x="18" y="17" width="92" height="20" rx="10" fill="#172e55"/>
+      <text x="64" y="31" text-anchor="middle" fill="#8db5ff" font-family="Arial, sans-serif" font-size="9" font-weight="800">SELL SERVICE</text>
+      <text x="18" y="69" fill="#f5f8fd" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="20" font-weight="700">短视频内容工作流</text>
+      <text x="18" y="98" fill="#8095b3" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="12">先成交服务，再沉淀产品</text>
+      <rect x="18" y="116" width="282" height="5" rx="3" fill="#1f3655"/>
+      <rect x="18" y="116" width="208" height="5" rx="3" fill="#4d8dff"/>
+    </g>
+    <g transform="translate(720 28)">
+      <rect width="380" height="138" rx="16" fill="#10223c" stroke="#24436e"/>
+      <text x="20" y="31" fill="#7790b2" font-family="Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="1.4">CEO DECISION</text>
+      <text x="20" y="70" fill="#f5f8fd" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" font-weight="700">证据链，而不是新闻摘要</text>
+      <text x="20" y="99" fill="#8197b6" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="12">BUILD · SELL SERVICE · WATCH · IGNORE</text>
+      <text x="20" y="122" fill="#65d8e7" font-family="Arial, sans-serif" font-size="10" font-weight="700">v0.2.0</text>
+    </g>
+  </g>
+  <text x="1204" y="605" text-anchor="end" fill="#5f7697" font-family="Arial, sans-serif" font-size="11">Commercial use requires a separate BossAI license.</text>
+</svg>

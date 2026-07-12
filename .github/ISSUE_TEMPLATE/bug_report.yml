@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible BossAI Radar Lite defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请勿在 Issue 中提交 API Key、`.env`、SQLite 数据库、私人 Feed 或安全漏洞细节。
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Collector
+        - Scoring / opportunity decision
+        - Database / migration
+        - Scheduler
+        - Dashboard
+        - Demo mode
+        - Documentation / license
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Open ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove secrets, personal data, local paths, and private URLs.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I removed all secrets and private data.
+          required: true
+        - label: I verified the issue on the latest version.
+          required: true
+        - label: This is not an undisclosed security vulnerability.
+          required: true
