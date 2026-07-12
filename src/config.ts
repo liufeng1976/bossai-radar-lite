@@ -28,6 +28,9 @@ export const config = {
   commercial: {
     email: process.env.COMMERCIAL_LICENSE_EMAIL?.trim() || "liufeng420594566@gmail.com",
     url: process.env.COMMERCIAL_LICENSE_URL?.trim() || "",
+    leadCaptureEnabled: boolFromEnv("COMMERCIAL_LEAD_CAPTURE_ENABLED", true),
+    leadAdminEnabled: boolFromEnv("COMMERCIAL_LEAD_ADMIN_ENABLED", true),
+    maxSubmissionsPerHour: intFromEnv("COMMERCIAL_LEAD_RATE_LIMIT", 5, 1, 100),
   },
   radar: {
     autoScan: boolFromEnv("RADAR_AUTO_SCAN", true),
@@ -66,7 +69,12 @@ export function publicConfig() {
       model: config.ai.apiKey ? config.ai.model : null,
     },
     demoEnabled: config.demoEnabled,
-    commercial: config.commercial,
+    commercial: {
+      email: config.commercial.email,
+      url: config.commercial.url,
+      leadCaptureEnabled: config.commercial.leadCaptureEnabled,
+      leadAdminEnabled: config.commercial.leadAdminEnabled,
+    },
     license: {
       type: "source-available-non-commercial",
       label: "BossAI Radar Lite Non-Commercial License 1.0",

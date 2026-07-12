@@ -1,7 +1,16 @@
+import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import type { ValidatedLeadInput } from "./leads.js";
 import type {
+  Lead,
+  LeadActivity,
+  LeadActivityType,
+  LeadIntent,
+  LeadPriority,
+  LeadStats,
+  LeadStatus,
   Opportunity,
   Report,
   SavedEvidence,
@@ -70,6 +79,40 @@ interface ReportRow {
   generated_at: string;
   executive_summary: string;
   markdown: string;
+}
+
+interface LeadRow {
+  id: string;
+  intent: LeadIntent;
+  name: string;
+  company: string;
+  contact: string;
+  team_size: string;
+  timeline: string;
+  deployment: string;
+  budget: string;
+  scenario: string;
+  requirements: string;
+  language: "zh" | "en";
+  source: string;
+  status: LeadStatus;
+  priority: LeadPriority;
+  score: number;
+  owner: string;
+  quote_amount: number | null;
+  quote_currency: string;
+  next_follow_up_at: string | null;
+  consent_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface LeadActivityRow {
+  id: number;
+  lead_id: string;
+  type: LeadActivityType;
+  content: string;
+  created_at: string;
 }
 
 export class RadarDatabase {
@@ -155,6 +198,49 @@ export class RadarDatabase {
       );
 
       CREATE INDEX IF NOT EXISTS idx_reports_generated_at ON reports(generated_at DESC);
+
+      CREATE TABLE IF NOT EXISTS leads (
+        id TEXT PRIMARY KEY,
+        intent TEXT NOT NULL,
+        name TEXT NOT NULL,
+        company TEXT NOT NULL DEFAULT '',
+        contact TEXT NOT NULL,
+        team_size TEXT NOT NULL,
+        timeline TEXT NOT NULL,
+        deployment TEXT NOT NULL,
+        budget TEXT NOT NULL,
+        scenario TEXT NOT NULL,
+        requirements TEXT NOT NULL DEFAULT '',
+        language TEXT NOT NULL DEFAULT 'zh',
+        source TEXT NOT NULL DEFAULT 'commercial-page',
+        status TEXT NOT NULL DEFAULT 'NEW',
+        priority TEXT NOT NULL DEFAULT 'COOL',
+        score INTEGER NOT NULL DEFAULT 0,
+        owner TEXT NOT NULL DEFAULT '',
+        quote_amount REAL,
+        quote_currency TEXT NOT NULL DEFAULT 'CNY',
+        next_follow_up_at TEXT,
+        consent_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_leads_priority ON leads(priority, score DESC);
+      CREATE INDEX IF NOT EXISTS idx_leads_intent ON leads(intent, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_leads_follow_up ON leads(next_follow_up_at);
+      CREATE INDEX IF NOT EXISTS idx_leads_contact ON leads(contact);
+
+      CREATE TABLE IF NOT EXISTS lead_activities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lead_activities_lead ON lead_activities(lead_id, created_at DESC);
     `);
     this.ensureColumn("evidence", "is_demo", "INTEGER NOT NULL DEFAULT 0");
     this.ensureColumn("opportunities", "is_demo", "INTEGER NOT NULL DEFAULT 0");
@@ -353,8 +439,271 @@ export class RadarDatabase {
     };
   }
 
+  createLead(input: ValidatedLeadInput): { lead: Lead; duplicate: boolean } {
+    const duplicateCutoff = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
+    const existing = this.db.prepare(`
+      SELECT * FROM leads
+      WHERE lower(contact) = lower(?) AND intent = ? AND created_at >= ?
+      ORDER BY created_at DESC LIMIT 1
+    `).get(input.contact, input.intent, duplicateCutoff) as unknown as LeadRow | undefined;
+    if (existing) return { lead: this.mapLead(existing), duplicate: true };
+
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    this.db.prepare(`
+      INSERT INTO leads (
+        id, intent, name, company, contact, team_size, timeline, deployment, budget,
+        scenario, requirements, language, source, status, priority, score, owner,
+        quote_amount, quote_currency, next_follow_up_at, consent_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', NULL, 'CNY', NULL, ?, ?, ?)
+    `).run(
+      id,
+      input.intent,
+      input.name,
+      input.company,
+      input.contact,
+      input.teamSize,
+      input.timeline,
+      input.deployment,
+      input.budget,
+      input.scenario,
+      input.requirements,
+      input.language,
+      input.source,
+      input.initialStatus,
+      input.priority,
+      input.score,
+      now,
+      now,
+      now,
+    );
+    this.addLeadActivity(id, "STATUS", `Created as ${input.initialStatus} with ${input.priority} priority (${input.score}/100).`);
+    const lead = this.getLead(id);
+    if (!lead) throw new Error("Lead was created but could not be read back");
+    return { lead, duplicate: false };
+  }
+
+  listLeads(options: {
+    limit?: number;
+    status?: LeadStatus;
+    intent?: LeadIntent;
+    priority?: LeadPriority;
+    query?: string;
+  } = {}): Lead[] {
+    const filters: string[] = [];
+    const params: Array<string | number> = [];
+    if (options.status) {
+      filters.push("status = ?");
+      params.push(options.status);
+    }
+    if (options.intent) {
+      filters.push("intent = ?");
+      params.push(options.intent);
+    }
+    if (options.priority) {
+      filters.push("priority = ?");
+      params.push(options.priority);
+    }
+    if (options.query?.trim()) {
+      const query = `%${options.query.trim().slice(0, 100)}%`;
+      filters.push("(name LIKE ? OR company LIKE ? OR contact LIKE ? OR scenario LIKE ?)");
+      params.push(query, query, query, query);
+    }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+    const limit = Math.max(1, Math.min(500, options.limit ?? 100));
+    const rows = this.db.prepare(`
+      SELECT * FROM leads ${where}
+      ORDER BY
+        CASE priority WHEN 'HOT' THEN 1 WHEN 'WARM' THEN 2 ELSE 3 END,
+        CASE status WHEN 'NEW' THEN 1 WHEN 'QUALIFIED' THEN 2 WHEN 'CONTACTED' THEN 3 WHEN 'PROPOSAL' THEN 4 WHEN 'NEGOTIATION' THEN 5 WHEN 'WAITLIST' THEN 6 WHEN 'WON' THEN 7 ELSE 8 END,
+        updated_at DESC
+      LIMIT ?
+    `).all(...params, limit) as unknown as LeadRow[];
+    return rows.map((row) => this.mapLead(row));
+  }
+
+  getLead(id: string): Lead | null {
+    const row = this.db.prepare("SELECT * FROM leads WHERE id = ?").get(id) as unknown as LeadRow | undefined;
+    return row ? this.mapLead(row) : null;
+  }
+
+  updateLead(id: string, patch: {
+    status?: LeadStatus;
+    priority?: LeadPriority;
+    owner?: string;
+    quoteAmount?: number | null;
+    quoteCurrency?: string;
+    nextFollowUpAt?: string | null;
+  }): Lead | null {
+    const current = this.getLead(id);
+    if (!current) return null;
+    const next = {
+      status: patch.status ?? current.status,
+      priority: patch.priority ?? current.priority,
+      owner: patch.owner ?? current.owner,
+      quoteAmount: patch.quoteAmount !== undefined ? patch.quoteAmount : current.quoteAmount,
+      quoteCurrency: patch.quoteCurrency ?? current.quoteCurrency,
+      nextFollowUpAt: patch.nextFollowUpAt !== undefined ? patch.nextFollowUpAt : current.nextFollowUpAt,
+    };
+    const updatedAt = new Date().toISOString();
+    this.db.prepare(`
+      UPDATE leads
+      SET status = ?, priority = ?, owner = ?, quote_amount = ?, quote_currency = ?, next_follow_up_at = ?, updated_at = ?
+      WHERE id = ?
+    `).run(
+      next.status,
+      next.priority,
+      next.owner,
+      next.quoteAmount,
+      next.quoteCurrency,
+      next.nextFollowUpAt,
+      updatedAt,
+      id,
+    );
+    if (patch.status && patch.status !== current.status) {
+      this.addLeadActivity(id, "STATUS", `${current.status} → ${patch.status}`);
+    }
+    if (patch.priority && patch.priority !== current.priority) {
+      this.addLeadActivity(id, "STATUS", `Priority ${current.priority} → ${patch.priority}`);
+    }
+    if (patch.quoteAmount !== undefined && patch.quoteAmount !== current.quoteAmount) {
+      const value = patch.quoteAmount === null ? "Quote cleared" : `Quote set to ${next.quoteCurrency} ${patch.quoteAmount}`;
+      this.addLeadActivity(id, "QUOTE", value);
+    }
+    return this.getLead(id);
+  }
+
+  addLeadActivity(leadId: string, type: LeadActivityType, content: string): LeadActivity {
+    const createdAt = new Date().toISOString();
+    const result = this.db.prepare(`
+      INSERT INTO lead_activities (lead_id, type, content, created_at)
+      VALUES (?, ?, ?, ?)
+    `).run(leadId, type, content, createdAt);
+    this.db.prepare("UPDATE leads SET updated_at = ? WHERE id = ?").run(createdAt, leadId);
+    return {
+      id: Number(result.lastInsertRowid),
+      leadId,
+      type,
+      content,
+      createdAt,
+    };
+  }
+
+  listLeadActivities(leadId: string, limit = 100): LeadActivity[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM lead_activities WHERE lead_id = ?
+      ORDER BY id DESC LIMIT ?
+    `).all(leadId, Math.max(1, Math.min(500, limit))) as unknown as LeadActivityRow[];
+    return rows.map((row) => this.mapLeadActivity(row));
+  }
+
+  deleteLead(id: string): boolean {
+    const result = this.db.prepare("DELETE FROM leads WHERE id = ?").run(id);
+    return Number(result.changes) > 0;
+  }
+
+  leadStats(): LeadStats {
+    const statusTemplate: Record<LeadStatus, number> = {
+      NEW: 0,
+      WAITLIST: 0,
+      QUALIFIED: 0,
+      CONTACTED: 0,
+      PROPOSAL: 0,
+      NEGOTIATION: 0,
+      WON: 0,
+      LOST: 0,
+    };
+    const intentTemplate: Record<LeadIntent, number> = {
+      commercial: 0,
+      "pro-waitlist": 0,
+      "white-label": 0,
+      "managed-service": 0,
+    };
+    const statusRows = this.db.prepare("SELECT status, COUNT(*) AS count FROM leads GROUP BY status").all() as unknown as Array<{ status: LeadStatus; count: number }>;
+    const intentRows = this.db.prepare("SELECT intent, COUNT(*) AS count FROM leads GROUP BY intent").all() as unknown as Array<{ intent: LeadIntent; count: number }>;
+    for (const row of statusRows) if (row.status in statusTemplate) statusTemplate[row.status] = Number(row.count);
+    for (const row of intentRows) if (row.intent in intentTemplate) intentTemplate[row.intent] = Number(row.count);
+    const totals = this.db.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN status NOT IN ('WON', 'LOST', 'WAITLIST') THEN 1 ELSE 0 END) AS active,
+        SUM(CASE WHEN priority = 'HOT' THEN 1 ELSE 0 END) AS hot
+      FROM leads
+    `).get() as unknown as { total: number; active: number; hot: number };
+    const currencyRows = this.db.prepare(`
+      SELECT
+        quote_currency AS currency,
+        COALESCE(SUM(CASE WHEN status NOT IN ('WON', 'LOST', 'WAITLIST') THEN quote_amount ELSE 0 END), 0) AS pipeline,
+        COALESCE(SUM(CASE WHEN status = 'WON' THEN quote_amount ELSE 0 END), 0) AS won
+      FROM leads
+      WHERE quote_amount IS NOT NULL
+      GROUP BY quote_currency
+    `).all() as unknown as Array<{ currency: string; pipeline: number; won: number }>;
+    const quotedByCurrency: Record<string, number> = {};
+    const wonByCurrency: Record<string, number> = {};
+    for (const row of currencyRows) {
+      const currency = row.currency || "CNY";
+      const pipeline = Number(row.pipeline || 0);
+      const won = Number(row.won || 0);
+      if (pipeline > 0) quotedByCurrency[currency] = pipeline;
+      if (won > 0) wonByCurrency[currency] = won;
+    }
+    return {
+      total: Number(totals.total || 0),
+      active: Number(totals.active || 0),
+      won: statusTemplate.WON,
+      lost: statusTemplate.LOST,
+      waitlist: statusTemplate.WAITLIST,
+      hot: Number(totals.hot || 0),
+      quotedValue: quotedByCurrency.CNY || 0,
+      wonValue: wonByCurrency.CNY || 0,
+      quotedByCurrency,
+      wonByCurrency,
+      byStatus: statusTemplate,
+      byIntent: intentTemplate,
+    };
+  }
+
   close(): void {
     this.db.close();
+  }
+
+  private mapLead(row: LeadRow): Lead {
+    return {
+      id: row.id,
+      intent: row.intent,
+      name: row.name,
+      company: row.company,
+      contact: row.contact,
+      teamSize: row.team_size,
+      timeline: row.timeline,
+      deployment: row.deployment,
+      budget: row.budget,
+      scenario: row.scenario,
+      requirements: row.requirements,
+      language: row.language,
+      source: row.source,
+      status: row.status,
+      priority: row.priority,
+      score: row.score,
+      owner: row.owner,
+      quoteAmount: row.quote_amount,
+      quoteCurrency: row.quote_currency,
+      nextFollowUpAt: row.next_follow_up_at,
+      consentAt: row.consent_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  private mapLeadActivity(row: LeadActivityRow): LeadActivity {
+    return {
+      id: row.id,
+      leadId: row.lead_id,
+      type: row.type,
+      content: row.content,
+      createdAt: row.created_at,
+    };
   }
 
   private mapRun(row: RunRow): ScanRunSummary {

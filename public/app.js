@@ -29,6 +29,8 @@ const els = {
   licenseButton: document.querySelector("#licenseButton"),
   licenseDialog: document.querySelector("#licenseDialog"),
   licenseContact: document.querySelector("#licenseContact"),
+  leadWorkspaceButton: document.querySelector("#leadWorkspaceButton"),
+  leadNavItem: document.querySelector("#leadNavItem"),
   reportButton: document.querySelector("#reportButton"),
   refreshButton: document.querySelector("#refreshButton"),
   systemStatus: document.querySelector("#systemStatus"),
@@ -122,6 +124,9 @@ function render() {
   const latestRun = overview?.latestRun;
   const top = state.opportunities[0];
   configureCommercialContact(overview?.config?.commercial);
+  const leadAdminEnabled = overview?.config?.commercial?.leadAdminEnabled !== false;
+  els.leadWorkspaceButton.hidden = !leadAdminEnabled;
+  els.leadNavItem.hidden = !leadAdminEnabled;
   els.demoButton.hidden = overview?.config?.demoEnabled === false;
 
   els.evidenceMetric.textContent = formatNumber(stats.evidence || 0);

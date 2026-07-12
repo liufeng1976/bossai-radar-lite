@@ -19,6 +19,9 @@ const includePaths = [
   "docs/COMMERCIAL_LICENSE_EN.md",
   "docs/LITE_VS_PRO.md",
   "docs/LITE_VS_PRO_EN.md",
+  "docs/LEAD_PRIVACY.md",
+  "docs/LEAD_PRIVACY_EN.md",
+  "docs/RELEASE_NOTES_v0.4.0.md",
   ".env.example",
   "CHANGELOG.md",
   "LICENSE",
@@ -35,7 +38,7 @@ for (const source of includePaths) {
   await cp(source, path.join(packageRoot, source), { recursive: true, force: true });
 }
 
-const installGuide = `BossAI Radar Lite v${version}\n\nWindows:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nCommand line:\n1. npm ci\n2. Copy .env.example to .env\n3. npm start\n\nDashboard: http://127.0.0.1:3080\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
+const installGuide = `BossAI Radar Lite v${version}\n\nWindows:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nCommand line:\n1. npm ci\n2. Copy .env.example to .env\n3. npm start\n\nDashboard: http://127.0.0.1:3080\nCommercial application: http://127.0.0.1:3080/commercial.html\nLead workspace: http://127.0.0.1:3080/leads.html\n\nLead data is stored in data/radar-lite.sqlite. Protect the file and RADAR_ADMIN_API_KEY.\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
 await writeFile(path.join(packageRoot, "INSTALL.txt"), installGuide, "utf8");
 
 const tarName = `${packageName}-runtime.tar.gz`;

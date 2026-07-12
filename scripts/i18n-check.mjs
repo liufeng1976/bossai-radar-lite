@@ -4,8 +4,10 @@ import { dictionaries } from "../public/i18n.js";
 const files = [
   "public/index.html",
   "public/commercial.html",
+  "public/leads.html",
   "public/app.js",
   "public/commercial.js",
+  "public/leads.js",
 ];
 
 const usedKeys = new Set();

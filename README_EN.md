@@ -98,6 +98,28 @@ Use the language button in the upper-right corner to switch between Chinese and 
 
 English reports are generated from structured opportunity data, not by reusing the Chinese report body.
 
+## Commercial Lead and Sales Pipeline
+
+The commercial application page can save submissions to the local SQLite database while retaining preview, clipboard copy and email backup:
+
+- deterministic lead score with HOT / WARM / COOL priority;
+- Pro submissions routed to WAITLIST;
+- NEW → QUALIFIED → CONTACTED → PROPOSAL → NEGOTIATION → WON / LOST;
+- owner, quote, currency and next-follow-up fields;
+- call, email, meeting, quote and note activity history;
+- pipeline and won values separated by currency;
+- CSV export and permanent deletion of a lead with its activities;
+- 24-hour deduplication, submission rate limiting and honeypot filtering.
+
+Open:
+
+```text
+http://127.0.0.1:3080/commercial.html?lang=en
+http://127.0.0.1:3080/leads.html?lang=en
+```
+
+Public deployments must protect the lead workspace with `RADAR_ADMIN_API_KEY`. See the [Commercial Lead Data Notice](docs/LEAD_PRIVACY_EN.md).
+
 ## Clearly Labeled Demo Data
 
 Click **Load Demo** to create nine synthetic evidence items and three opportunities:
@@ -154,6 +176,7 @@ Related documents:
 - [Full License](LICENSE)
 - [Commercial License Guide](docs/COMMERCIAL_LICENSE_EN.md)
 - [Lite vs Pro](docs/LITE_VS_PRO_EN.md)
+- [Commercial Lead Data Notice](docs/LEAD_PRIVACY_EN.md)
 
 ## Technology
 
@@ -241,6 +264,9 @@ DATA_DIR=./data
 RADAR_DEMO_ENABLED=true
 COMMERCIAL_LICENSE_EMAIL=liufeng420594566@gmail.com
 COMMERCIAL_LICENSE_URL=
+COMMERCIAL_LEAD_CAPTURE_ENABLED=true
+COMMERCIAL_LEAD_ADMIN_ENABLED=true
+COMMERCIAL_LEAD_RATE_LIMIT=5
 
 RADAR_AUTO_SCAN=true
 RADAR_RUN_ON_STARTUP=true
@@ -285,6 +311,14 @@ See [SECURITY.md](SECURITY.md).
 | GET | `/api/report/latest.md?lang=en` | English Markdown report |
 | POST | `/api/scan` | Run a live scan |
 | POST | `/api/demo/seed` | Load clearly labeled synthetic demo data |
+| POST | `/api/leads` | Submit a commercial-license or Pro-waitlist application |
+| GET | `/api/admin/leads` | Search and filter leads as an administrator |
+| GET | `/api/admin/leads/stats` | Funnel and per-currency quote statistics |
+| GET | `/api/admin/leads/export.csv` | Export lead data as CSV |
+| GET | `/api/admin/leads/:id` | Read a lead and its activity history |
+| PATCH | `/api/admin/leads/:id` | Update status, priority, owner, quote and follow-up time |
+| POST | `/api/admin/leads/:id/activities` | Add a follow-up activity |
+| DELETE | `/api/admin/leads/:id` | Permanently delete a lead and all activities |
 
 Public write requests use:
 
@@ -304,9 +338,11 @@ bossai-radar-lite/
 ├── public/
 │   ├── index.html              # bilingual dashboard
 │   ├── commercial.html         # bilingual license and Pro application
+│   ├── leads.html              # bilingual commercial lead workspace
 │   ├── i18n.js                 # Chinese/English dictionary
 │   ├── app.js
-│   └── commercial.js
+│   ├── commercial.js
+│   └── leads.js
 ├── scripts/
 │   ├── i18n-check.mjs
 │   ├── release-check.mjs
@@ -324,6 +360,9 @@ The release gate checks:
 - backend tests;
 - legacy database migration;
 - demo/live evidence isolation;
+- lead validation, scoring, deduplication, lifecycle and deletion;
+- public submission and administrator authorization boundaries;
+- multi-currency pipeline statistics and CSV export;
 - English report generation;
 - frontend JavaScript syntax;
 - Chinese/English dictionary completeness;

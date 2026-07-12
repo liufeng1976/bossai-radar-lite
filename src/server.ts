@@ -5,10 +5,17 @@ import { fileURLToPath } from "node:url";
 import { config, publicConfig } from "./config.js";
 import { RadarDatabase } from "./database.js";
 import { seedDemoData } from "./demo.js";
+import {
+  LeadValidationError,
+  normalizeActivityInput,
+  normalizeLeadPatch,
+  validateLeadInput,
+} from "./leads.js";
 import { RadarEngine } from "./pipeline.js";
 import { createEnglishReport } from "./report.js";
 import { RadarScheduler } from "./scheduler.js";
 import { APP_NAME, APP_SLUG, APP_VERSION, LICENSE_LABEL } from "./version.js";
+import type { LeadIntent, LeadPriority, LeadStatus } from "./types.js";
 
 process.env.TZ = config.radar.timeZone;
 
@@ -16,6 +23,7 @@ const db = new RadarDatabase(config.dataDir);
 const engine = new RadarEngine(db);
 const scheduler = new RadarScheduler(engine);
 const app = express();
+const leadSubmissionWindows = new Map<string, number[]>();
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -87,6 +95,97 @@ app.get("/api/report/latest.md", (req, res) => {
   return res.type("text/markdown; charset=utf-8").send(markdown);
 });
 
+app.post("/api/leads", (req, res, next) => {
+  try {
+    if (!config.commercial.leadCaptureEnabled) {
+      return res.status(503).json({ error: "Lead capture is disabled", code: "LEAD_CAPTURE_DISABLED" });
+    }
+    const honeypot = typeof req.body?.website === "string" ? req.body.website.trim() : "";
+    if (honeypot) return res.status(202).json({ accepted: true });
+    if (!allowLeadSubmission(req.ip)) {
+      res.setHeader("Retry-After", "3600");
+      return res.status(429).json({ error: "Too many submissions", code: "LEAD_RATE_LIMITED" });
+    }
+    const input = validateLeadInput(req.body, "commercial-page");
+    const result = db.createLead(input);
+    return res.status(result.duplicate ? 200 : 201).json({
+      id: result.lead.id,
+      duplicate: result.duplicate,
+      createdAt: result.lead.createdAt,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/api/admin/leads/stats", requireLeadAdmin, (_req, res) => {
+  res.json(db.leadStats());
+});
+
+app.get("/api/admin/leads/export.csv", requireLeadAdmin, (req, res) => {
+  const leads = db.listLeads({
+    limit: parseLimit(req.query.limit, 500, 2_000),
+    status: parseLeadStatus(req.query.status),
+    intent: parseLeadIntent(req.query.intent),
+    priority: parseLeadPriority(req.query.priority),
+    query: typeof req.query.q === "string" ? req.query.q : undefined,
+  });
+  const header = [
+    "id", "intent", "name", "company", "contact", "teamSize", "timeline", "deployment", "budget",
+    "status", "priority", "score", "owner", "quoteAmount", "quoteCurrency", "nextFollowUpAt",
+    "language", "scenario", "requirements", "createdAt", "updatedAt",
+  ];
+  const lines = [header.join(","), ...leads.map((lead) => header.map((key) => csvCell(lead[key as keyof typeof lead])).join(","))];
+  res.setHeader("Content-Disposition", `attachment; filename=bossai-radar-leads-${new Date().toISOString().slice(0, 10)}.csv`);
+  return res.type("text/csv; charset=utf-8").send(`\uFEFF${lines.join("\n")}`);
+});
+
+app.get("/api/admin/leads", requireLeadAdmin, (req, res) => {
+  res.json({
+    items: db.listLeads({
+      limit: parseLimit(req.query.limit, 100, 500),
+      status: parseLeadStatus(req.query.status),
+      intent: parseLeadIntent(req.query.intent),
+      priority: parseLeadPriority(req.query.priority),
+      query: typeof req.query.q === "string" ? req.query.q : undefined,
+    }),
+  });
+});
+
+app.get("/api/admin/leads/:id", requireLeadAdmin, (req, res) => {
+  const lead = db.getLead(routeParam(req.params.id));
+  if (!lead) return res.status(404).json({ error: "Lead not found", code: "LEAD_NOT_FOUND" });
+  return res.json({ lead, activities: db.listLeadActivities(lead.id) });
+});
+
+app.patch("/api/admin/leads/:id", requireLeadAdmin, (req, res, next) => {
+  try {
+    const lead = db.updateLead(routeParam(req.params.id), normalizeLeadPatch(req.body));
+    if (!lead) return res.status(404).json({ error: "Lead not found", code: "LEAD_NOT_FOUND" });
+    return res.json({ lead, activities: db.listLeadActivities(lead.id) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete("/api/admin/leads/:id", requireLeadAdmin, (req, res) => {
+  const deleted = db.deleteLead(routeParam(req.params.id));
+  if (!deleted) return res.status(404).json({ error: "Lead not found", code: "LEAD_NOT_FOUND" });
+  return res.status(204).send();
+});
+
+app.post("/api/admin/leads/:id/activities", requireLeadAdmin, (req, res, next) => {
+  try {
+    const lead = db.getLead(routeParam(req.params.id));
+    if (!lead) return res.status(404).json({ error: "Lead not found", code: "LEAD_NOT_FOUND" });
+    const input = normalizeActivityInput(req.body);
+    const activity = db.addLeadActivity(lead.id, input.type, input.content);
+    return res.status(201).json({ activity, lead: db.getLead(lead.id) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post("/api/scan", requireWriteAccess, async (_req, res, next) => {
   try {
     const result = await engine.scan("manual");
@@ -116,9 +215,12 @@ app.use(express.static(publicDir, { maxAge: "1h", etag: true }));
 app.get("*splat", (_req, res) => res.sendFile(path.join(publicDir, "index.html")));
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (error instanceof LeadValidationError) {
+    return res.status(400).json({ error: error.message, code: "LEAD_VALIDATION_FAILED", fields: error.fields });
+  }
   console.error("[HTTP]", error);
   const message = error instanceof Error ? error.message : "Unexpected server error";
-  res.status(500).json({ error: message });
+  return res.status(500).json({ error: message });
 });
 
 const server = app.listen(config.port, config.host, () => {
@@ -131,6 +233,34 @@ const server = app.listen(config.port, config.host, () => {
     });
   }
 });
+
+function requireLeadAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (!config.commercial.leadAdminEnabled) {
+    res.status(404).json({ error: "Lead administration is disabled", code: "LEAD_ADMIN_DISABLED" });
+    return;
+  }
+  requireWriteAccess(req, res, next);
+}
+
+function allowLeadSubmission(ip: string | undefined): boolean {
+  const key = ip || "unknown";
+  const cutoff = Date.now() - 60 * 60 * 1_000;
+  const recent = (leadSubmissionWindows.get(key) ?? []).filter((timestamp) => timestamp >= cutoff);
+  if (recent.length >= config.commercial.maxSubmissionsPerHour) {
+    leadSubmissionWindows.set(key, recent);
+    return false;
+  }
+  recent.push(Date.now());
+  leadSubmissionWindows.set(key, recent);
+  if (leadSubmissionWindows.size > 2_000) {
+    for (const [entryKey, timestamps] of leadSubmissionWindows) {
+      const active = timestamps.filter((timestamp) => timestamp >= cutoff);
+      if (active.length) leadSubmissionWindows.set(entryKey, active);
+      else leadSubmissionWindows.delete(entryKey);
+    }
+  }
+  return true;
+}
 
 function requireWriteAccess(req: Request, res: Response, next: NextFunction): void {
   const suppliedKey = req.header("x-radar-key") || req.header("authorization")?.replace(/^Bearer\s+/i, "");
@@ -150,9 +280,33 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
+function routeParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] || "" : value || "";
+}
+
 function parseLimit(value: unknown, fallback: number, max: number): number {
   const parsed = Number.parseInt(typeof value === "string" ? value : "", 10);
   return Number.isFinite(parsed) ? Math.max(1, Math.min(max, parsed)) : fallback;
+}
+
+function parseLeadStatus(value: unknown): LeadStatus | undefined {
+  const allowed = new Set<LeadStatus>(["NEW", "WAITLIST", "QUALIFIED", "CONTACTED", "PROPOSAL", "NEGOTIATION", "WON", "LOST"]);
+  return typeof value === "string" && allowed.has(value as LeadStatus) ? value as LeadStatus : undefined;
+}
+
+function parseLeadIntent(value: unknown): LeadIntent | undefined {
+  const allowed = new Set<LeadIntent>(["commercial", "pro-waitlist", "white-label", "managed-service"]);
+  return typeof value === "string" && allowed.has(value as LeadIntent) ? value as LeadIntent : undefined;
+}
+
+function parseLeadPriority(value: unknown): LeadPriority | undefined {
+  const allowed = new Set<LeadPriority>(["HOT", "WARM", "COOL"]);
+  return typeof value === "string" && allowed.has(value as LeadPriority) ? value as LeadPriority : undefined;
+}
+
+function csvCell(value: unknown): string {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
 }
 
 function shutdown(signal: string): void {

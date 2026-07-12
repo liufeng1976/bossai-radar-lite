@@ -88,3 +88,73 @@ export interface AiOpportunityNarrative {
   priceHint: string;
   mvpPlan: string[];
 }
+
+export type LeadIntent = "commercial" | "pro-waitlist" | "white-label" | "managed-service";
+export type LeadStatus = "NEW" | "WAITLIST" | "QUALIFIED" | "CONTACTED" | "PROPOSAL" | "NEGOTIATION" | "WON" | "LOST";
+export type LeadPriority = "HOT" | "WARM" | "COOL";
+export type LeadActivityType = "NOTE" | "EMAIL" | "CALL" | "MEETING" | "QUOTE" | "STATUS";
+
+export interface LeadInput {
+  intent: LeadIntent;
+  name: string;
+  company?: string;
+  contact: string;
+  teamSize: string;
+  timeline: string;
+  deployment: string;
+  budget: string;
+  scenario: string;
+  requirements?: string;
+  language: "zh" | "en";
+  consent: boolean;
+  website?: string;
+}
+
+export interface Lead {
+  id: string;
+  intent: LeadIntent;
+  name: string;
+  company: string;
+  contact: string;
+  teamSize: string;
+  timeline: string;
+  deployment: string;
+  budget: string;
+  scenario: string;
+  requirements: string;
+  language: "zh" | "en";
+  source: string;
+  status: LeadStatus;
+  priority: LeadPriority;
+  score: number;
+  owner: string;
+  quoteAmount: number | null;
+  quoteCurrency: string;
+  nextFollowUpAt: string | null;
+  consentAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeadActivity {
+  id: number;
+  leadId: string;
+  type: LeadActivityType;
+  content: string;
+  createdAt: string;
+}
+
+export interface LeadStats {
+  total: number;
+  active: number;
+  won: number;
+  lost: number;
+  waitlist: number;
+  hot: number;
+  quotedValue: number;
+  wonValue: number;
+  quotedByCurrency: Record<string, number>;
+  wonByCurrency: Record<string, number>;
+  byStatus: Record<LeadStatus, number>;
+  byIntent: Record<LeadIntent, number>;
+}

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="BossAI Radar 商业线索管理后台" />
+    <title>BossAI Radar 商业线索后台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="leads-page">
+    <header class="commercial-header leads-header">
+      <a class="brand" href="/">
+        <span class="brand-mark">B</span>
+        <span>
+          <strong>BossAI Radar</strong>
+          <small>COMMERCIAL LEAD WORKSPACE</small>
+        </span>
+      </a>
+      <div class="top-actions">
+        <button class="language-toggle" type="button" data-language-toggle data-i18n-aria-label="common.languageLabel">EN</button>
+        <a class="button ghost" href="/" data-i18n="leads.back">返回雷达仪表盘</a>
+        <button class="button ghost" id="exportButton" type="button" data-i18n="leads.export">导出 CSV</button>
+      </div>
+    </header>
+
+    <main class="leads-main">
+      <section class="leads-hero">
+        <div>
+          <p class="eyebrow">COMMERCIAL PIPELINE</p>
+          <h1 data-i18n="leads.title">BossAI Radar 商业线索后台</h1>
+          <p data-i18n="leads.description">管理商业授权、Pro 等待名单、报价和跟进漏斗</p>
+        </div>
+        <button class="button primary" id="refreshLeadsButton" type="button" data-i18n="leads.refresh">刷新</button>
+      </section>
+
+      <section class="lead-auth" id="authPanel" hidden>
+        <div>
+          <strong data-i18n="leads.adminKey">管理员密钥</strong>
+          <p data-i18n="leads.authHint">密钥只保存在当前浏览器会话中。本机 127.0.0.1 可直接访问。</p>
+        </div>
+        <div class="lead-auth-actions">
+          <input id="adminKeyInput" type="password" autocomplete="off" data-i18n-placeholder="leads.adminKeyPlaceholder" placeholder="输入 RADAR_ADMIN_API_KEY" />
+          <button class="button primary" id="connectButton" type="button" data-i18n="leads.connect">进入后台</button>
+        </div>
+      </section>
+
+      <section class="lead-metrics" aria-label="Lead metrics">
+        <article><span data-i18n="leads.total">全部线索</span><strong id="leadTotal">0</strong></article>
+        <article><span data-i18n="leads.active">活跃漏斗</span><strong id="leadActive">0</strong></article>
+        <article><span data-i18n="leads.hot">HOT 线索</span><strong id="leadHot">0</strong></article>
+        <article><span data-i18n="leads.quoted">报价总额</span><strong id="leadQuoted">0</strong></article>
+        <article><span data-i18n="leads.won">已成交</span><strong id="leadWon">0</strong></article>
+      </section>
+
+      <section class="lead-funnel-panel">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">PIPELINE</p>
+            <h2 data-i18n="leads.funnel">成交漏斗</h2>
+          </div>
+        </div>
+        <div class="lead-funnel" id="leadFunnel"></div>
+      </section>
+
+      <section class="lead-workspace">
+        <div class="lead-filters">
+          <div>
+            <p class="eyebrow">FILTERS</p>
+            <h2 data-i18n="leads.filters">筛选与搜索</h2>
+          </div>
+          <select id="statusFilter">
+            <option value="" data-i18n="leads.allStatuses">全部状态</option>
+            <option value="NEW" data-i18n="lead.status.NEW">新线索</option>
+            <option value="WAITLIST" data-i18n="lead.status.WAITLIST">等待名单</option>
+            <option value="QUALIFIED" data-i18n="lead.status.QUALIFIED">已筛选</option>
+            <option value="CONTACTED" data-i18n="lead.status.CONTACTED">已联系</option>
+            <option value="PROPOSAL" data-i18n="lead.status.PROPOSAL">已报价</option>
+            <option value="NEGOTIATION" data-i18n="lead.status.NEGOTIATION">谈判中</option>
+            <option value="WON" data-i18n="lead.status.WON">已成交</option>
+            <option value="LOST" data-i18n="lead.status.LOST">已流失</option>
+          </select>
+          <select id="intentFilter">
+            <option value="" data-i18n="leads.allIntents">全部申请类型</option>
+            <option value="commercial" data-i18n="lead.intent.commercial">商业授权</option>
+            <option value="pro-waitlist" data-i18n="lead.intent.pro-waitlist">Pro 等待名单</option>
+            <option value="white-label" data-i18n="lead.intent.white-label">白标 / 转售</option>
+            <option value="managed-service" data-i18n="lead.intent.managed-service">托管实施</option>
+          </select>
+          <select id="priorityFilter">
+            <option value="" data-i18n="leads.allPriorities">全部优先级</option>
+            <option value="HOT">HOT</option>
+            <option value="WARM">WARM</option>
+            <option value="COOL">COOL</option>
+          </select>
+          <input id="leadSearch" type="search" data-i18n-placeholder="leads.searchPlaceholder" placeholder="搜索姓名、公司、联系方式或场景" />
+        </div>
+
+        <div class="lead-table-wrap">
+          <table class="lead-table">
+            <thead>
+              <tr>
+                <th data-i18n="leads.name">姓名 / 公司</th>
+                <th data-i18n="leads.intent">申请类型</th>
+                <th data-i18n="leads.priority">优先级</th>
+                <th data-i18n="leads.status">状态</th>
+                <th data-i18n="leads.budget">预算</th>
+                <th data-i18n="leads.followup">下次跟进</th>
+                <th data-i18n="leads.updated">最近更新</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="leadRows"></tbody>
+          </table>
+          <div class="empty-state" id="leadEmpty" hidden data-i18n="leads.empty">暂无符合条件的商业线索。</div>
+        </div>
+      </section>
+      <p class="form-status" id="leadStatus" role="status" aria-live="polite"></p>
+    </main>
+
+    <dialog class="lead-dialog" id="leadDialog">
+      <form method="dialog" class="lead-detail-card" id="leadDetailForm">
+        <button class="dialog-close" value="close" aria-label="Close">×</button>
+        <div class="lead-detail-header">
+          <div>
+            <p class="eyebrow" data-i18n="leads.detail">线索详情</p>
+            <h2 id="detailName">—</h2>
+            <p id="detailReference"></p>
+          </div>
+          <div class="lead-score-ring"><span data-i18n="leads.score">线索评分</span><strong id="detailScore">0</strong></div>
+        </div>
+
+        <div class="lead-detail-grid">
+          <div><span data-i18n="leads.contact">联系方式</span><strong id="detailContact">—</strong></div>
+          <div><span data-i18n="leads.intent">申请类型</span><strong id="detailIntent">—</strong></div>
+          <div><span data-i18n="leads.team">团队规模</span><strong id="detailTeam">—</strong></div>
+          <div><span data-i18n="leads.timeline">预计上线</span><strong id="detailTimeline">—</strong></div>
+          <div><span data-i18n="leads.deployment">部署方式</span><strong id="detailDeployment">—</strong></div>
+          <div><span data-i18n="leads.budget">预算</span><strong id="detailBudget">—</strong></div>
+        </div>
+
+        <div class="lead-copy-block"><span data-i18n="leads.scenario">使用场景</span><p id="detailScenario"></p></div>
+        <div class="lead-copy-block"><span data-i18n="leads.requirements">需要能力</span><p id="detailRequirements"></p></div>
+
+        <div class="lead-editor-grid">
+          <label><span data-i18n="leads.status">状态</span><select id="detailStatus" name="status">
+            <option value="NEW" data-i18n="lead.status.NEW">新线索</option>
+            <option value="WAITLIST" data-i18n="lead.status.WAITLIST">等待名单</option>
+            <option value="QUALIFIED" data-i18n="lead.status.QUALIFIED">已筛选</option>
+            <option value="CONTACTED" data-i18n="lead.status.CONTACTED">已联系</option>
+            <option value="PROPOSAL" data-i18n="lead.status.PROPOSAL">已报价</option>
+            <option value="NEGOTIATION" data-i18n="lead.status.NEGOTIATION">谈判中</option>
+            <option value="WON" data-i18n="lead.status.WON">已成交</option>
+            <option value="LOST" data-i18n="lead.status.LOST">已流失</option>
+          </select></label>
+          <label><span data-i18n="leads.priority">优先级</span><select id="detailPriority" name="priority"><option value="HOT">HOT</option><option value="WARM">WARM</option><option value="COOL">COOL</option></select></label>
+          <label><span data-i18n="leads.owner">负责人</span><input id="detailOwner" name="owner" maxlength="80" data-i18n-placeholder="leads.ownerPlaceholder" /></label>
+          <label><span data-i18n="leads.quote">报价金额</span><input id="detailQuote" name="quoteAmount" type="number" min="0" step="0.01" /></label>
+          <label><span data-i18n="leads.currency">币种</span><select id="detailCurrency" name="quoteCurrency"><option>CNY</option><option>USD</option><option>EUR</option><option>GBP</option></select></label>
+          <label class="wide"><span data-i18n="leads.followupAt">下次跟进时间</span><input id="detailFollowup" name="nextFollowUpAt" type="datetime-local" /></label>
+        </div>
+        <div class="detail-actions">
+          <button class="button ghost danger-button" id="deleteLeadButton" type="button" data-i18n="leads.delete">删除线索</button>
+          <button class="button primary detail-save" id="saveLeadButton" type="button" data-i18n="leads.save">保存线索</button>
+        </div>
+
+        <section class="lead-activity-section">
+          <div class="section-heading compact"><h3 data-i18n="leads.activity">跟进记录</h3></div>
+          <div class="activity-compose">
+            <select id="activityType">
+              <option value="NOTE" data-i18n="lead.activity.NOTE">备注</option>
+              <option value="EMAIL" data-i18n="lead.activity.EMAIL">邮件</option>
+              <option value="CALL" data-i18n="lead.activity.CALL">电话</option>
+              <option value="MEETING" data-i18n="lead.activity.MEETING">会议</option>
+              <option value="QUOTE" data-i18n="lead.activity.QUOTE">报价</option>
+            </select>
+            <textarea id="activityContent" rows="3" data-i18n-placeholder="leads.activityPlaceholder"></textarea>
+            <button class="button ghost" id="addActivityButton" type="button" data-i18n="leads.addActivity">添加记录</button>
+          </div>
+          <div class="activity-list" id="activityList"></div>
+        </section>
+      </form>
+    </dialog>
+
+    <script type="module" src="/leads.js"></script>
+  </body>
+</html>

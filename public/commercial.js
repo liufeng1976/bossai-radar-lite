@@ -13,6 +13,8 @@ const form = document.querySelector("#licenseForm");
 const intentSelect = document.querySelector("#intentSelect");
 const previewButton = document.querySelector("#previewButton");
 const copyButton = document.querySelector("#copyButton");
+const emailButton = document.querySelector("#emailButton");
+const submitButton = document.querySelector("#submitButton");
 const preview = document.querySelector("#applicationPreview");
 const previewContent = document.querySelector("#previewContent");
 const closePreviewButton = document.querySelector("#closePreviewButton");
@@ -21,7 +23,9 @@ const pageVersion = document.querySelector("#pageVersion");
 const intentButtons = [...document.querySelectorAll(".intent-button")];
 
 let contactEmail = DEFAULT_CONTACT_EMAIL;
-let appVersion = "0.3.0";
+let appVersion = "0.4.0";
+let leadCaptureEnabled = false;
+let submitting = false;
 
 applyQueryIntent();
 await loadPublicConfig();
@@ -53,18 +57,55 @@ copyButton.addEventListener("click", async () => {
   }
 });
 
+emailButton.addEventListener("click", () => {
+  if (!validateForm()) return;
+  openEmailBackup();
+});
+
 closePreviewButton.addEventListener("click", () => {
   preview.hidden = true;
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!validateForm()) return;
-  const application = buildApplication();
-  showPreview(application);
-  const mailto = `mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(application.subject)}&body=${encodeURIComponent(application.body)}`;
-  setStatus(t("form.openingMail", { email: contactEmail }), false);
-  window.location.href = mailto;
+  if (submitting || !validateForm()) return;
+  if (!leadCaptureEnabled) {
+    showPreview();
+    setStatus(t("form.captureDisabled"), true);
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    const response = await fetch("/api/leads", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(buildLeadPayload()),
+    });
+    const payload = await readPayload(response);
+    if (!response.ok) {
+      const error = new Error(payload?.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.code = payload?.code;
+      throw error;
+    }
+
+    showPreview();
+    if (payload.duplicate) {
+      setStatus(t("form.duplicate", { id: payload.id }), false);
+    } else {
+      setStatus(t("form.submitted", { id: payload.id }), false);
+    }
+  } catch (error) {
+    showPreview();
+    if (error?.status === 429) setStatus(t("form.rateLimited"), true);
+    else setStatus(t("form.submitFailed"), true);
+  } finally {
+    setSubmitting(false);
+  }
 });
 
 async function loadPublicConfig() {
@@ -76,10 +117,12 @@ async function loadPublicConfig() {
     const version = payload?.version || payload?.config?.version;
     if (typeof configuredEmail === "string" && configuredEmail.includes("@")) contactEmail = configuredEmail.trim();
     if (typeof version === "string" && version.trim()) appVersion = version.trim();
+    leadCaptureEnabled = payload?.config?.commercial?.leadCaptureEnabled === true;
   } catch {
-    // The application page remains usable as a static preview.
+    // Static previews retain copy and email fallback without claiming that data was saved.
   }
   pageVersion.textContent = `v${appVersion}`;
+  if (!leadCaptureEnabled) submitButton.title = t("form.captureDisabled");
 }
 
 function applyQueryIntent() {
@@ -99,6 +142,33 @@ function showPreview(application = buildApplication()) {
   preview.hidden = false;
   preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
   setStatus(t("form.previewReady"), false);
+}
+
+function openEmailBackup() {
+  const application = buildApplication();
+  showPreview(application);
+  const mailto = `mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(application.subject)}&body=${encodeURIComponent(application.body)}`;
+  setStatus(t("form.openingMail", { email: contactEmail }), false);
+  window.location.href = mailto;
+}
+
+function buildLeadPayload() {
+  const values = Object.fromEntries(new FormData(form).entries());
+  return {
+    intent: clean(values.intent),
+    name: clean(values.name),
+    company: clean(values.company),
+    contact: clean(values.contact),
+    teamSize: clean(values.teamSize),
+    timeline: clean(values.timeline),
+    deployment: clean(values.deployment),
+    budget: clean(values.budget),
+    scenario: clean(values.scenario),
+    requirements: clean(values.requirements),
+    language,
+    consent: form.elements.namedItem("consent")?.checked === true,
+    website: clean(values.website),
+  };
 }
 
 function buildApplication() {
@@ -142,6 +212,25 @@ function selectedText(name) {
   const select = form.elements.namedItem(name);
   if (!(select instanceof HTMLSelectElement)) return "";
   return select.selectedOptions[0]?.textContent?.trim() || "";
+}
+
+function setSubmitting(value) {
+  submitting = Boolean(value);
+  submitButton.disabled = submitting;
+  previewButton.disabled = submitting;
+  copyButton.disabled = submitting;
+  emailButton.disabled = submitting;
+  submitButton.textContent = t(submitting ? "form.submitting" : "form.send");
+}
+
+async function readPayload(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return {};
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
 }
 
 function clean(value) {

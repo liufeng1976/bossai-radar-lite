@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.0 - 2026-07-12
+
+### Added
+
+- Local SQLite commercial lead capture for license applications and Pro waitlist submissions
+- 24-hour contact-and-intent deduplication, in-memory rate limiting, consent validation, and honeypot filtering
+- Deterministic commercial lead score with HOT / WARM / COOL priority
+- NEW, WAITLIST, QUALIFIED, CONTACTED, PROPOSAL, NEGOTIATION, WON, and LOST funnel stages
+- Bilingual commercial lead workspace with search, filters, funnel metrics, detail editing, and activity history
+- Owner, quote, quote currency, next follow-up time, and multi-currency pipeline statistics
+- CSV export and permanent lead deletion with activity cascade
+- Chinese and English lead-data privacy notices
+- Public submit API and administrator read/update/activity/export/delete APIs
+
+### Changed
+
+- Commercial application form now submits to the local database when enabled
+- Preview, clipboard copy, and email backup remain available
+- Commercial configuration now exposes lead-capture and lead-admin availability without exposing secrets
+- Frontend and bilingual validation now include the lead workspace
+
+### Validation
+
+- Backend automated tests: 17 passed
+- Lead scoring, waitlist routing, consent, honeypot, deduplication, multi-currency statistics, lifecycle, and deletion covered
+- Public submit and administrator read/update/activity/export/delete smoke tests passed
+- Bilingual dictionary check: 282 used keys and 304 paired entries passed
+- Frontend JavaScript syntax and TypeScript production build passed
+
 ## 0.3.0 - 2026-07-12
 
 ### Added

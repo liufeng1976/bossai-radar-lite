@@ -18,6 +18,7 @@
       </a>
       <div class="commercial-header-actions">
         <button class="button ghost language-toggle" id="languageToggle" type="button">EN</button>
+        <a class="button ghost" href="/leads.html" data-preserve-language data-i18n="leads.adminLink">商业线索后台</a>
         <a class="button ghost" href="/" data-preserve-language data-i18n="commercial.back">返回 Lite 仪表盘</a>
       </div>
     </header>
@@ -31,8 +32,8 @@
         </div>
         <div class="commercial-hero-stat">
           <span data-i18n="commercial.localTitle">授权申请</span>
-          <strong data-i18n="commercial.localStrong">本地生成</strong>
-          <small data-i18n="commercial.localHelp">不经过第三方表单服务</small>
+          <strong data-i18n="commercial.localStrong">本地入库</strong>
+          <small data-i18n="commercial.localHelp">可选邮件与复制备份</small>
         </div>
       </section>
 
@@ -78,7 +79,7 @@
         <div class="application-copy">
           <p class="eyebrow" data-i18n="application.eyebrow">结构化申请</p>
           <h2 data-i18n="application.title">提交使用场景，我们按商业模式评估授权</h2>
-          <p data-i18n="application.body">页面不会把表单上传到任何服务器。点击发送时只会打开你设备上的邮件客户端；也可以复制申请内容，通过微信或其他方式发送。</p>
+          <p data-i18n="application.body">启用线索收集时，申请会保存到当前 BossAI Radar 部署的本地数据库；你也可以复制内容或打开邮件客户端作为备份。</p>
           <div class="boundary-list">
             <div><strong data-i18n="application.requiredTitle">必须授权</strong><span data-i18n="application.requiredBody">收费 SaaS、企业内部经营、咨询交付、付费课程、白标、转售和商业集成。</span></div>
             <div><strong data-i18n="application.notIncludedTitle">授权不自动包含</strong><span data-i18n="application.notIncludedBody">平台数据许可、第三方 API 费用、部署服务器、定制开发和长期技术支持。</span></div>
@@ -87,6 +88,9 @@
         </div>
 
         <form class="application-form" id="licenseForm">
+          <div class="honeypot-field" aria-hidden="true">
+            <label>Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
           <div class="form-grid">
             <label>
               <span data-i18n="form.intent">申请类型</span>
@@ -169,7 +173,8 @@
           <div class="form-actions">
             <button class="button ghost" id="previewButton" type="button" data-i18n="form.preview">生成申请预览</button>
             <button class="button ghost" id="copyButton" type="button" data-i18n="form.copy">复制申请内容</button>
-            <button class="button primary" type="submit" data-i18n="form.send">打开邮件发送</button>
+            <button class="button ghost" id="emailButton" type="button" data-i18n="form.emailBackup">打开邮件备份</button>
+            <button class="button primary" id="submitButton" type="submit" data-i18n="form.send">提交并保存</button>
           </div>
 
           <div class="application-preview" id="applicationPreview" hidden>
@@ -185,7 +190,7 @@
     </main>
 
     <footer class="commercial-footer">
-      <span>BossAI Radar Lite <strong id="pageVersion">v0.3.0</strong></span>
+      <span>BossAI Radar Lite <strong id="pageVersion">v0.4.0</strong></span>
       <span data-i18n="footer.license">源码开放 · 非商业许可 · 商业使用需授权</span>
     </footer>
 
