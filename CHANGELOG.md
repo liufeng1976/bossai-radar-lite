@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.6.0 - 2026-07-12
+
+### Added
+
+- Standard stdio MCP server built with the official TypeScript SDK
+- Nine default read-only Radar tools and two reusable prompts
+- Optional live-scan, lead-update, and activity-write MCP tools
+- Shared typed Radar API client for MCP and CLI integrations
+- JSON Agent CLI fallback for hosts without MCP
+- Portable, OpenClaw, and Hermes SKILL.md packages
+- OpenClaw workspace skill installer
+- Verified Codex, Claude Code, and Hermes MCP commands
+- Codex TOML and generic stdio JSON configuration examples
+- Chinese and English Agent Skill / MCP integration guides
+
+### Security
+
+- MCP and CLI scan/write permissions are disabled by default
+- No agent interface exposes lead deletion
+- Customer outreach remains draft-only and human-reviewed
+- Skill packages are checked for dangerous download pipes, obfuscated commands, and destructive shell patterns
+- Administrator keys, SQLite data, and contact exports remain excluded from release packages
+
+### Validation
+
+- Official MCP Client tool and prompt discovery passed
+- Default read-only and optional write-tool gates passed
+- JSON CLI subprocess integration passed against a live local Radar server
+- OpenClaw temporary workspace installation passed
+- Portable, OpenClaw, and Hermes skill frontmatter and safety checks passed
+
 ## 0.5.0 - 2026-07-12
 
 ### Added

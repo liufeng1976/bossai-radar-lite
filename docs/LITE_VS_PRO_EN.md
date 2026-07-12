@@ -17,6 +17,7 @@
 | Team accounts and permissions | No | Yes |
 | Multi-tenant isolation | No | Yes |
 | Feishu, Slack, email or enterprise messaging | No | Yes |
+| Agent Skill / MCP | Local stdio MCP, OpenClaw/Hermes skills, read-only by default, single administrator | Remote MCP gateway, granular permissions, tenant isolation, approvals, usage audit and policy control |
 | Commercial lead workspace | Single administrator, local SQLite, sales funnel, human-reviewed follow-up queue/drafts, brief, calendar and CSV | Multi-user assignment, automated outreach, external CRM integration, approval and audit |
 | Industry monitoring templates | Limited | Yes |
 | Private deployment | Self-managed evaluation only | Yes |

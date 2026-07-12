@@ -132,6 +132,29 @@ v0.5 会把活跃线索自动整理为四类执行队列：
 
 系统不会自动发送邮件、微信或短信。完整工作法见 [每日线索跟进工作法](docs/FOLLOWUP_GUIDE.md)。
 
+### Agent Skill 与 MCP
+
+v0.6 将 Radar Lite 从独立网页系统升级为可被 Agent 正式调用的通用能力层：
+
+- 标准 stdio MCP Server；
+- 默认 9 个只读工具和 2 个复用 Prompt；
+- 可选真实扫描、线索更新和活动记录工具；
+- OpenClaw 专用 `SKILL.md`；
+- Hermes 专用 `SKILL.md`；
+- Claude Code 与 Codex MCP 接入命令；
+- 无 MCP 环境可使用 JSON CLI；
+- Skill 安装器只复制文件，不下载程序或修改 Agent 配置。
+
+默认只读。MCP 和 CLI 都不会向 Agent 暴露删除线索能力，客户消息也必须人工审核。
+
+```powershell
+npm run mcp
+npm run agent -- overview
+npm run skill:install -- openclaw --workspace C:\path\to\openclaw-workspace
+```
+
+完整接入说明见 [Agent Skill 与 MCP 接入指南](docs/AGENT_INTEGRATION.md)。
+
 ### 明确标记的演示数据
 
 首次评估时可点击页面右上角的 **载入演示**。系统会生成 9 条合成证据和多个机会，用于展示完整界面。
@@ -185,6 +208,8 @@ v0.5 会把活跃线索自动整理为四类执行队列：
 - Express 5；
 - Node 内置 SQLite；
 - 原生 HTML / CSS / JavaScript；
+- Model Context Protocol TypeScript SDK；
+- Zod 工具参数验证；
 - 可选 DeepSeek 或任意 OpenAI-compatible 模型。
 
 不需要单独安装 PostgreSQL、Redis 或前端框架。
@@ -274,6 +299,15 @@ AI_MODEL=deepseek-chat
 
 GITHUB_TOKEN=
 RADAR_ADMIN_API_KEY=change-this-before-public-deployment
+
+RADAR_API_URL=http://127.0.0.1:3080
+RADAR_MCP_LANGUAGE=zh
+RADAR_MCP_TIMEOUT_MS=20000
+RADAR_MCP_ALLOW_SCAN=false
+RADAR_MCP_ALLOW_LEAD_WRITE=false
+RADAR_SKILL_ALLOW_SCAN=false
+RADAR_SKILL_ALLOW_LEAD_WRITE=false
+RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 ```
 
 `GITHUB_TOKEN` 不是必需项，但可提高 GitHub 公共搜索限额。
@@ -334,8 +368,10 @@ bossai-radar-lite/
 │   ├── COMMERCIAL_LICENSE.md
 │   ├── LITE_VS_PRO.md
 │   └── RELEASE_CHECKLIST.md
+├── integrations/               # MCP 配置示例
 ├── public/                     # 中英文仪表盘、商业授权页、线索后台和 i18n 词典
-├── scripts/                    # 构建、双语检查、发布打包与发布门禁
+├── skills/                     # 通用、OpenClaw 与 Hermes Skill
+├── scripts/                    # 构建、Skill 安装、发布打包与发布门禁
 ├── src/
 │   ├── ai.ts                   # 可选 OpenAI-compatible 分析
 │   ├── collectors.ts           # Reddit / HN / GitHub 采集器
@@ -344,6 +380,10 @@ bossai-radar-lite/
 │   ├── demo.ts                 # 明确标记的合成演示数据
 │   ├── leads.ts                # 线索校验、评分与状态输入规范化
 │   ├── followups.ts            # 跟进队列、话术、日报和日历
+│   ├── radar-api-client.ts     # Agent 与 MCP 共用 API Client
+│   ├── mcp.ts                  # MCP 工具与 Prompt 注册
+│   ├── mcp-server.ts           # stdio MCP 入口
+│   ├── agent-cli.ts            # 无 MCP 环境的 JSON CLI
 │   ├── pipeline.ts             # 全链路编排与失败隔离
 │   ├── report.ts               # CEO 日报
 │   ├── scheduler.ts            # 每日定点扫描
@@ -382,22 +422,21 @@ npm run release:check
 
 ## 当前验证状态
 
-v0.5.0 发布门禁覆盖：
+v0.6.0 发布门禁覆盖：
 
 - 数据库旧版 Schema 自动升级；
 - 演示数据与真实评分隔离；
-- 机会评分和 BUILD 门槛；
-- 商业线索校验、评分、等待名单分流和 24 小时去重；
-- OVERDUE / TODAY / UNSCHEDULED / UPCOMING 队列分类与排序；
-- 中英文客户话术、建议阶段和下一次跟进日期；
-- 中英文跟进日报与 iCalendar 导出；
-- 管理员语言和客户话术语言分离；
-- 多币种报价、状态、跟进活动和删除生命周期；
-- 公开提交与管理员读写、导出、删除、提醒接口冒烟；
-- 前端 JavaScript 语法检查、双语词典和 TypeScript 生产构建；
+- 机会评分、线索和跟进生命周期；
+- 官方 MCP Client 的工具发现、Prompt 和调用测试；
+- 默认 9 个只读工具与可选写工具权限门禁；
+- Agent JSON CLI 独立子进程和默认拒绝写权限测试；
+- 通用、OpenClaw、Hermes `SKILL.md` frontmatter 与危险指令检查；
+- OpenClaw 临时工作区安装测试；
+- Codex、Claude Code、Hermes 和通用 MCP 配置文档；
+- 前端 JavaScript、双语词典和 TypeScript 生产构建；
 - Windows ZIP、runtime tar.gz 与 SHA256 校验。
 
-详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.5.0.md](docs/RELEASE_NOTES_v0.5.0.md)。
+详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.6.0.md](docs/RELEASE_NOTES_v0.6.0.md)。
 
 ## 免责声明
 

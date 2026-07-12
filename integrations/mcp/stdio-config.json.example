@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "bossai-radar": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\42059\\bossai-radar-lite\\dist\\src\\mcp-server.js"
+      ],
+      "env": {
+        "RADAR_API_URL": "http://127.0.0.1:3080",
+        "RADAR_MCP_LANGUAGE": "zh",
+        "RADAR_MCP_ALLOW_SCAN": "false",
+        "RADAR_MCP_ALLOW_LEAD_WRITE": "false"
+      }
+    }
+  }
+}

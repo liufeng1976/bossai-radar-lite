@@ -1,0 +1,4 @@
+interface:
+  display_name: "BossAI Radar"
+  short_description: "Business opportunity radar and sales follow-up"
+  default_prompt: "Use $bossai-radar to review the highest-priority evidence-backed opportunities and today's commercial follow-ups. Keep customer outreach human-reviewed."

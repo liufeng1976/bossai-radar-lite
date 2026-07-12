@@ -23,7 +23,12 @@ const includePaths = [
   "docs/LEAD_PRIVACY_EN.md",
   "docs/FOLLOWUP_GUIDE.md",
   "docs/FOLLOWUP_GUIDE_EN.md",
-  "docs/RELEASE_NOTES_v0.5.0.md",
+  "docs/AGENT_INTEGRATION.md",
+  "docs/AGENT_INTEGRATION_EN.md",
+  "docs/RELEASE_NOTES_v0.6.0.md",
+  "integrations",
+  "skills",
+  "scripts/install-agent-skill.mjs",
   ".env.example",
   "CHANGELOG.md",
   "LICENSE",
@@ -40,7 +45,7 @@ for (const source of includePaths) {
   await cp(source, path.join(packageRoot, source), { recursive: true, force: true });
 }
 
-const installGuide = `BossAI Radar Lite v${version}\n\nWindows:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nCommand line:\n1. npm ci\n2. Copy .env.example to .env\n3. npm start\n\nDashboard: http://127.0.0.1:3080\nCommercial application: http://127.0.0.1:3080/commercial.html\nLead workspace: http://127.0.0.1:3080/leads.html\nFollow-up queue and daily actions are available inside the lead workspace.\n\nLead data is stored in data/radar-lite.sqlite. Protect the file and RADAR_ADMIN_API_KEY.\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
+const installGuide = `BossAI Radar Lite v${version}\n\nWindows:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nCommand line:\n1. npm ci\n2. Copy .env.example to .env\n3. npm start\n\nDashboard: http://127.0.0.1:3080\nCommercial application: http://127.0.0.1:3080/commercial.html\nLead workspace: http://127.0.0.1:3080/leads.html\nFollow-up queue and daily actions are available inside the lead workspace.\n\nAgent access:\n- MCP: node dist/src/mcp-server.js\n- JSON CLI: node dist/src/agent-cli.js overview\n- Integration guide: docs/AGENT_INTEGRATION.md\n\nLead data is stored in data/radar-lite.sqlite. Protect the file and RADAR_ADMIN_API_KEY.\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
 await writeFile(path.join(packageRoot, "INSTALL.txt"), installGuide, "utf8");
 
 const tarName = `${packageName}-runtime.tar.gz`;

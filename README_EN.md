@@ -141,6 +141,29 @@ The system combines due status, HOT / WARM / COOL, sales stage, launch timing an
 
 The system does not automatically send email, WeChat or SMS. See the [Daily Lead Follow-Up Guide](docs/FOLLOWUP_GUIDE_EN.md).
 
+## Agent Skill and MCP
+
+v0.6 turns Radar Lite into a reusable agent capability layer:
+
+- standard stdio MCP server;
+- nine default read-only tools and two reusable prompts;
+- optional live-scan, lead-update, and activity-write tools;
+- dedicated OpenClaw `SKILL.md`;
+- dedicated Hermes `SKILL.md`;
+- verified Claude Code and Codex MCP commands;
+- JSON CLI fallback for hosts without MCP;
+- a skill installer that copies files only and never changes agent configuration.
+
+The default interface is read-only. Neither MCP nor the CLI exposes lead deletion, and customer outreach remains human-reviewed.
+
+```powershell
+npm run mcp
+npm run agent -- overview
+npm run skill:install -- openclaw --workspace C:\path\to\openclaw-workspace
+```
+
+See the [Agent Skill and MCP Integration Guide](docs/AGENT_INTEGRATION_EN.md).
+
 ## Clearly Labeled Demo Data
 
 Click **Load Demo** to create nine synthetic evidence items and three opportunities:
@@ -206,6 +229,8 @@ Related documents:
 - Express 5;
 - Node built-in SQLite;
 - native HTML, CSS and JavaScript;
+- Model Context Protocol TypeScript SDK;
+- Zod tool-input validation;
 - optional DeepSeek or another OpenAI-compatible model.
 
 PostgreSQL, Redis and a frontend framework are not required.
@@ -305,6 +330,15 @@ AI_MODEL=deepseek-chat
 
 GITHUB_TOKEN=
 RADAR_ADMIN_API_KEY=change-this-before-public-deployment
+
+RADAR_API_URL=http://127.0.0.1:3080
+RADAR_MCP_LANGUAGE=en
+RADAR_MCP_TIMEOUT_MS=20000
+RADAR_MCP_ALLOW_SCAN=false
+RADAR_MCP_ALLOW_LEAD_WRITE=false
+RADAR_SKILL_ALLOW_SCAN=false
+RADAR_SKILL_ALLOW_LEAD_WRITE=false
+RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 ```
 
 Before public deployment:
@@ -360,6 +394,7 @@ bossai-radar-lite/
 │   ├── ISSUE_TEMPLATE/
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── docs/
+├── integrations/               # MCP configuration examples
 ├── public/
 │   ├── index.html              # bilingual dashboard
 │   ├── commercial.html         # bilingual license and Pro application
@@ -368,11 +403,17 @@ bossai-radar-lite/
 │   ├── app.js
 │   ├── commercial.js
 │   └── leads.js
+├── skills/                     # portable, OpenClaw, and Hermes skills
 ├── scripts/
 │   ├── i18n-check.mjs
+│   ├── install-agent-skill.mjs
 │   ├── release-check.mjs
 │   └── package-release.mjs
 ├── src/
+│   ├── radar-api-client.ts
+│   ├── mcp.ts
+│   ├── mcp-server.ts
+│   └── agent-cli.ts
 ├── tests/
 ├── README.md
 └── README_EN.md
@@ -390,6 +431,10 @@ The release gate checks:
 - bilingual customer drafts, recommended stages and next-follow-up dates;
 - bilingual follow-up reports and iCalendar export;
 - public submission and administrator authorization boundaries;
+- MCP tool discovery, prompts, structured calls, and permission gates using the official client;
+- JSON CLI subprocess behavior and default denial of scan/write operations;
+- portable, OpenClaw, and Hermes SKILL.md frontmatter and safety checks;
+- temporary OpenClaw workspace installation;
 - multi-currency pipeline statistics and CSV export;
 - English opportunity report generation;
 - frontend JavaScript syntax;

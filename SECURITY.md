@@ -37,7 +37,11 @@ liufeng420594566@gmail.com
 7. 关闭不需要的演示入口：`RADAR_DEMO_ENABLED=false`；
 8. 将服务放在可信网络或增加额外身份认证；
 9. 线索后台开启时，确认 `COMMERCIAL_LEAD_ADMIN_ENABLED=true` 仅配合强管理员密钥使用；
-10. 定期备份并清理 `data/radar-lite.sqlite`，不要把联系人和导出 CSV 上传到公开位置。
+10. 定期备份并清理 `data/radar-lite.sqlite`，不要把联系人和导出 CSV 上传到公开位置；
+11. MCP 默认保持 `RADAR_MCP_ALLOW_SCAN=false` 和 `RADAR_MCP_ALLOW_LEAD_WRITE=false`；
+12. JSON CLI 默认保持 `RADAR_SKILL_ALLOW_SCAN=false` 和 `RADAR_SKILL_ALLOW_LEAD_WRITE=false`；
+13. 只从本仓库或经过人工审查的来源安装 Skill，不执行第三方 Skill 中的下载管道、混淆命令或未知脚本；
+14. 不把 `RADAR_ADMIN_API_KEY` 直接写入公开 Agent 配置、聊天记录或 Skill 文本。
 
 ## 已知边界
 
@@ -49,6 +53,9 @@ liufeng420594566@gmail.com
 - 公开线索接口只能提交，管理员接口才能读取、导出、修改或删除；
 - 提交限流保存在进程内，重启后清空，不替代网关级 WAF 或长期滥用防护；
 - Lite 不保存访问者原始 IP，但会保存申请人主动填写的联系方式和商业场景；
-- 部署方负责依法告知、限制访问、备份、清理和响应合理的数据删除要求。
+- 部署方负责依法告知、限制访问、备份、清理和响应合理的数据删除要求；
+- 本地 stdio MCP 会由 Agent 主机启动进程，Agent 主机本身的命令权限、沙箱和配置安全不由 Radar Lite 控制；
+- Agent 工具描述可能被不可信内容影响，任何扫描、线索修改或客户沟通都应保留人工确认；
+- MCP 和 CLI 故意不提供删除线索能力，但拥有主机文件权限的 Agent 仍可能直接访问文件，部署方应限制其工作目录和系统权限。
 
 线索数据详情见 [docs/LEAD_PRIVACY.md](docs/LEAD_PRIVACY.md) 和 [docs/LEAD_PRIVACY_EN.md](docs/LEAD_PRIVACY_EN.md)。
