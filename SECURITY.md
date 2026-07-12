@@ -43,6 +43,18 @@ liufeng420594566@gmail.com
 13. 只从本仓库或经过人工审查的来源安装 Skill，不执行第三方 Skill 中的下载管道、混淆命令或未知脚本；
 14. 不把 `RADAR_ADMIN_API_KEY` 直接写入公开 Agent 配置、聊天记录或 Skill 文本。
 
+## Agent 自安装安全
+
+- 建议先运行 `--dry-run` 查看安装计划；
+- 对受控环境使用固定标签，例如 `github:liufeng1976/bossai-radar-lite#v0.7.0`；
+- 自安装器只把管理员密钥写入 Radar 安装目录的 `.env`，不会打印或写入 Agent MCP 配置；
+- 默认关闭定时扫描、Agent 真实扫描和线索写入；
+- `--enable-scan` 与 `--enable-lead-write` 必须由用户明确授权；
+- OpenClaw Skill 配置只保存安装路径、API 地址、语言和非敏感权限状态；
+- `.radar/` 中的 PID 与日志只属于本机运行状态，不得上传到公开仓库；
+- `npx` 安装会执行本仓库代码，部署方应核对仓库、标签和许可证；
+- Agent 主机仍应限制文件系统、进程和网络权限，Radar 安装器不能替代宿主沙箱。
+
 ## 已知边界
 
 - Lite 版管理员鉴权是单一 API Key，不等同于完整用户权限系统；

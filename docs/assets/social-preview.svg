@@ -60,7 +60,7 @@
       <text x="20" y="31" fill="#7790b2" font-family="Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="1.4">CEO DECISION</text>
       <text x="20" y="70" fill="#f5f8fd" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" font-weight="700">证据链，而不是新闻摘要</text>
       <text x="20" y="99" fill="#8197b6" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="12">BUILD · SELL SERVICE · WATCH · IGNORE</text>
-      <text x="20" y="122" fill="#65d8e7" font-family="Arial, sans-serif" font-size="10" font-weight="700">v0.6.0 · AGENT SKILL + MCP</text>
+      <text x="20" y="122" fill="#65d8e7" font-family="Arial, sans-serif" font-size="10" font-weight="700">v0.7.0 · AGENT SELF-INSTALL</text>
     </g>
   </g>
   <text x="1204" y="605" text-anchor="end" fill="#5f7697" font-family="Arial, sans-serif" font-size="11">Commercial use requires a separate BossAI license.</text>

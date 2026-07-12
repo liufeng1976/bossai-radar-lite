@@ -1,9 +1,12 @@
 {
   "name": "bossai-radar-lite",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "BossAI Radar Lite - source-available non-commercial overseas business opportunity radar",
   "type": "module",
+  "bin": {
+    "bossai-radar-install": "scripts/agent-bootstrap.mjs"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/src/server.js",
@@ -12,6 +15,11 @@
     "agent": "node dist/src/agent-cli.js",
     "agent:dev": "tsx src/agent-cli.ts",
     "skill:install": "node scripts/install-agent-skill.mjs",
+    "agent:install": "node scripts/agent-bootstrap.mjs",
+    "service:start": "node scripts/radar-service.mjs start",
+    "service:stop": "node scripts/radar-service.mjs stop",
+    "service:restart": "node scripts/radar-service.mjs restart",
+    "service:status": "node scripts/radar-service.mjs status",
     "build": "tsc -p tsconfig.json && node scripts/copy-public.mjs",
     "test": "tsx --test tests/**/*.test.ts",
     "check:frontend": "node --check public/app.js && node --check public/commercial.js && node --check public/leads.js && node --check public/i18n.js",

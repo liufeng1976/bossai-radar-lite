@@ -10,6 +10,28 @@
 
 BossAI Radar Lite is the **source-available, non-commercial edition** of BossAI Radar. It is not a news aggregator and does not require users to manually enter leads.
 
+## Give the Repository Directly to an Agent
+
+Send this URL to OpenClaw, Hermes, Claude Code, or Codex:
+
+```text
+https://github.com/liufeng1976/bossai-radar-lite
+```
+
+Then instruct the agent:
+
+```text
+Read agent-install.json and AGENT_INSTALL.md, then perform the installation, service startup, Skill/MCP registration, and health verification. Keep the installation read-only by default. Do not enable live scans or lead writes without explicit approval.
+```
+
+The agent can also run one command:
+
+```powershell
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+```
+
+Replace `codex` with `openclaw`, `hermes`, or `claude`. See [Agent Self-Install](AGENT_INSTALL.md).
+
 ```text
 Public source collection
         ↓
@@ -141,28 +163,30 @@ The system combines due status, HOT / WARM / COOL, sales stage, launch timing an
 
 The system does not automatically send email, WeChat or SMS. See the [Daily Lead Follow-Up Guide](docs/FOLLOWUP_GUIDE_EN.md).
 
-## Agent Skill and MCP
+## Agent Skill, MCP, and GitHub Self-Install
 
-v0.6 turns Radar Lite into a reusable agent capability layer:
+v0.7 lets an Agent complete the entire integration directly from GitHub:
 
+- machine-readable `agent-install.json`;
+- root `AGENTS.md` for Codex-compatible agents;
+- root `CLAUDE.md` for Claude Code;
+- OpenClaw, Hermes, and portable Skills;
 - standard stdio MCP server;
 - nine default read-only tools and two reusable prompts;
-- optional live-scan, lead-update, and activity-write tools;
-- dedicated OpenClaw `SKILL.md`;
-- dedicated Hermes `SKILL.md`;
-- verified Claude Code and Codex MCP commands;
 - JSON CLI fallback for hosts without MCP;
-- a skill installer that copies files only and never changes agent configuration.
+- stable install directory, local strong key, background service, and verification;
+- service start, stop, restart, and status commands;
+- MCP and CLI load `.env` from the Radar installation directory.
 
 The default interface is read-only. Neither MCP nor the CLI exposes lead deletion, and customer outreach remains human-reviewed.
 
 ```powershell
-npm run mcp
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+npm run service:status
 npm run agent -- overview
-npm run skill:install -- openclaw --workspace C:\path\to\openclaw-workspace
 ```
 
-See the [Agent Skill and MCP Integration Guide](docs/AGENT_INTEGRATION_EN.md).
+See [Agent Self-Install](AGENT_INSTALL.md) and the [Agent Skill and MCP Integration Guide](docs/AGENT_INTEGRATION_EN.md).
 
 ## Clearly Labeled Demo Data
 
@@ -435,6 +459,12 @@ The release gate checks:
 - JSON CLI subprocess behavior and default denial of scan/write operations;
 - portable, OpenClaw, and Hermes SKILL.md frontmatter and safety checks;
 - temporary OpenClaw workspace installation;
+- machine-readable install manifest and root Agent instructions;
+- local npx package-bin execution;
+- mutation-free self-install dry-run;
+- generated-key secrecy and safe default permissions;
+- cross-working-directory `.env` loading;
+- background service start, health, status, and stop lifecycle;
 - multi-currency pipeline statistics and CSV export;
 - English opportunity report generation;
 - frontend JavaScript syntax;

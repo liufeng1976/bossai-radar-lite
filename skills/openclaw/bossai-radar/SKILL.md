@@ -15,6 +15,8 @@ Use this skill for overseas opportunity scans, opportunity evidence review, comm
 
 ## Startup check
 
+The self-installer writes `config.json` and `RADAR_HOME.txt` beside this file. Resolve the Radar directory from `config.json.radarHome`, then fall back to `RADAR_HOME.txt` or `RADAR_LITE_HOME`.
+
 BossAI Radar Lite must already be running. Prefer MCP tools when the OpenClaw host exposes them. Otherwise use the CLI fallback:
 
 ```bash

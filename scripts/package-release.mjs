@@ -25,10 +25,16 @@ const includePaths = [
   "docs/FOLLOWUP_GUIDE_EN.md",
   "docs/AGENT_INTEGRATION.md",
   "docs/AGENT_INTEGRATION_EN.md",
-  "docs/RELEASE_NOTES_v0.6.0.md",
+  "docs/RELEASE_NOTES_v0.7.0.md",
   "integrations",
   "skills",
   "scripts/install-agent-skill.mjs",
+  "scripts/agent-bootstrap.mjs",
+  "scripts/radar-service.mjs",
+  "AGENT_INSTALL.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "agent-install.json",
   ".env.example",
   "CHANGELOG.md",
   "LICENSE",
@@ -45,7 +51,7 @@ for (const source of includePaths) {
   await cp(source, path.join(packageRoot, source), { recursive: true, force: true });
 }
 
-const installGuide = `BossAI Radar Lite v${version}\n\nWindows:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nCommand line:\n1. npm ci\n2. Copy .env.example to .env\n3. npm start\n\nDashboard: http://127.0.0.1:3080\nCommercial application: http://127.0.0.1:3080/commercial.html\nLead workspace: http://127.0.0.1:3080/leads.html\nFollow-up queue and daily actions are available inside the lead workspace.\n\nAgent access:\n- MCP: node dist/src/mcp-server.js\n- JSON CLI: node dist/src/agent-cli.js overview\n- Integration guide: docs/AGENT_INTEGRATION.md\n\nLead data is stored in data/radar-lite.sqlite. Protect the file and RADAR_ADMIN_API_KEY.\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
+const installGuide = `BossAI Radar Lite v${version}\n\nAgent self-install:\n- Give the GitHub repository to OpenClaw, Hermes, Claude Code, or Codex.\n- Read AGENT_INSTALL.md and agent-install.json.\n- From this extracted package: node scripts/agent-bootstrap.mjs --agent <agent>\n\nWindows manual start:\n1. Extract this archive.\n2. Double-click start-radar.cmd.\n\nService management:\n- npm run service:status\n- npm run service:start\n- npm run service:restart\n- npm run service:stop\n\nDashboard: http://127.0.0.1:3080\nCommercial application: http://127.0.0.1:3080/commercial.html\nLead workspace: http://127.0.0.1:3080/leads.html\n\nAgent access:\n- MCP: node dist/src/mcp-server.js\n- JSON CLI: node dist/src/agent-cli.js overview\n- Self-install guide: AGENT_INSTALL.md\n- Integration guide: docs/AGENT_INTEGRATION.md\n\nLead data is stored in data/radar-lite.sqlite. Protect the file and RADAR_ADMIN_API_KEY.\n\nLicense: non-commercial use only. Commercial use requires written BossAI authorization.\n`;
 await writeFile(path.join(packageRoot, "INSTALL.txt"), installGuide, "utf8");
 
 const tarName = `${packageName}-runtime.tar.gz`;

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "name": "bossai-radar-lite",
+  "version": "0.7.0",
+  "repository": "https://github.com/liufeng1976/bossai-radar-lite",
+  "license": "BossAI Radar Lite Non-Commercial License 1.0",
+  "minimumNodeVersion": "22.5.0",
+  "installer": {
+    "bin": "bossai-radar-install",
+    "source": "scripts/agent-bootstrap.mjs",
+    "npx": "npx -y github:liufeng1976/bossai-radar-lite --agent {agent}",
+    "clonedRepository": "node scripts/agent-bootstrap.mjs --agent {agent}",
+    "defaultInstallDirectory": "~/.bossai-radar-lite"
+  },
+  "agents": {
+    "openclaw": {
+      "argument": "openclaw",
+      "installs": ["workspace Skill", "Radar background service", "JSON CLI configuration"],
+      "workspaceOption": "--workspace <openclaw-workspace>"
+    },
+    "hermes": {
+      "argument": "hermes",
+      "installs": ["Hermes Skill", "stdio MCP registration", "Radar background service"]
+    },
+    "claude-code": {
+      "argument": "claude",
+      "installs": ["Claude Code MCP registration", "optional project Skill", "Radar background service"],
+      "workspaceOption": "--workspace <project>"
+    },
+    "codex": {
+      "argument": "codex",
+      "installs": ["Codex MCP registration", "optional project Skill", "Radar background service"],
+      "workspaceOption": "--workspace <project>"
+    }
+  },
+  "safeDefaults": {
+    "automaticScan": false,
+    "liveScanTool": false,
+    "leadMutationTools": false,
+    "leadDeletionTool": false,
+    "automaticCustomerMessaging": false,
+    "administratorKey": "generated locally and stored only in the Radar .env file"
+  },
+  "verification": [
+    "Radar HTTP health check",
+    "Agent CLI health call",
+    "MCP or Skill registration result"
+  ],
+  "permissions": {
+    "enableLiveScan": "--enable-scan",
+    "enableLeadWrites": "--enable-lead-write",
+    "neverAvailable": ["delete lead through MCP", "automatic message sending"]
+  },
+  "documentation": {
+    "bilingualInstallGuide": "AGENT_INSTALL.md",
+    "agentIntegrationChinese": "docs/AGENT_INTEGRATION.md",
+    "agentIntegrationEnglish": "docs/AGENT_INTEGRATION_EN.md",
+    "security": "SECURITY.md"
+  }
+}

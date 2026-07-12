@@ -8,7 +8,31 @@
 
 > 自动搜索海外公开信息，识别真实痛点、付费表达与竞品信号，生成可执行的 CEO 商业机会日报。
 
-BossAI Radar Lite 是 BossAI Radar 的 **source-available 非商业版**。它不是新闻聚合器，也不要求用户手工录入线索。系统会自动完成：
+BossAI Radar Lite 是 BossAI Radar 的 **source-available 非商业版**。它不是新闻聚合器，也不要求用户手工录入线索。
+
+## 直接交给 Agent 安装
+
+把这个地址发给 OpenClaw、Hermes、Claude Code 或 Codex：
+
+```text
+https://github.com/liufeng1976/bossai-radar-lite
+```
+
+并告诉它：
+
+```text
+读取 agent-install.json 和 AGENT_INSTALL.md，直接完成安装、服务启动、Skill/MCP 配置和健康检查。默认只读，未经确认不得开启真实扫描或线索写入。
+```
+
+Agent 也可以直接执行一条命令：
+
+```powershell
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+```
+
+将 `codex` 替换为 `openclaw`、`hermes` 或 `claude`。安装器会安装到稳定目录、生成本地强密钥、启动后台服务并完成验证。详细说明见 [Agent 自安装指南](AGENT_INSTALL.md)。
+
+系统会自动完成：
 
 ```text
 公开来源采集
@@ -132,28 +156,30 @@ v0.5 会把活跃线索自动整理为四类执行队列：
 
 系统不会自动发送邮件、微信或短信。完整工作法见 [每日线索跟进工作法](docs/FOLLOWUP_GUIDE.md)。
 
-### Agent Skill 与 MCP
+### Agent Skill、MCP 与 GitHub 自安装
 
-v0.6 将 Radar Lite 从独立网页系统升级为可被 Agent 正式调用的通用能力层：
+v0.7 让 Agent 可以从 GitHub 自动完成整套接入：
 
+- 根目录机器清单 `agent-install.json`；
+- Codex 使用 `AGENTS.md`；
+- Claude Code 使用 `CLAUDE.md`；
+- OpenClaw、Hermes 和通用 `SKILL.md`；
 - 标准 stdio MCP Server；
 - 默认 9 个只读工具和 2 个复用 Prompt；
-- 可选真实扫描、线索更新和活动记录工具；
-- OpenClaw 专用 `SKILL.md`；
-- Hermes 专用 `SKILL.md`；
-- Claude Code 与 Codex MCP 接入命令；
-- 无 MCP 环境可使用 JSON CLI；
-- Skill 安装器只复制文件，不下载程序或修改 Agent 配置。
+- 无 MCP 环境使用 JSON CLI；
+- 稳定安装目录、强密钥、后台服务和健康验证；
+- `service:start / stop / restart / status` 服务管理；
+- MCP/CLI 始终从 Radar 安装目录读取 `.env`。
 
 默认只读。MCP 和 CLI 都不会向 Agent 暴露删除线索能力，客户消息也必须人工审核。
 
 ```powershell
-npm run mcp
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+npm run service:status
 npm run agent -- overview
-npm run skill:install -- openclaw --workspace C:\path\to\openclaw-workspace
 ```
 
-完整接入说明见 [Agent Skill 与 MCP 接入指南](docs/AGENT_INTEGRATION.md)。
+完整说明见 [Agent 自安装指南](AGENT_INSTALL.md) 和 [Agent Skill 与 MCP 接入指南](docs/AGENT_INTEGRATION.md)。
 
 ### 明确标记的演示数据
 
@@ -422,21 +448,22 @@ npm run release:check
 
 ## 当前验证状态
 
-v0.6.0 发布门禁覆盖：
+v0.7.0 发布门禁覆盖：
 
-- 数据库旧版 Schema 自动升级；
-- 演示数据与真实评分隔离；
-- 机会评分、线索和跟进生命周期；
-- 官方 MCP Client 的工具发现、Prompt 和调用测试；
-- 默认 9 个只读工具与可选写工具权限门禁；
-- Agent JSON CLI 独立子进程和默认拒绝写权限测试；
-- 通用、OpenClaw、Hermes `SKILL.md` frontmatter 与危险指令检查；
-- OpenClaw 临时工作区安装测试；
-- Codex、Claude Code、Hermes 和通用 MCP 配置文档；
+- 数据库、机会、线索和跟进生命周期；
+- 官方 MCP Client、9 个默认工具、2 个 Prompt 和可选写权限；
+- Agent JSON CLI 与跨工作目录 `.env` 加载；
+- 通用、OpenClaw、Hermes Skill 安全检查；
+- `agent-install.json`、`AGENTS.md`、`CLAUDE.md` 和双语自安装文档；
+- 本地 `npx` 包入口；
+- 无修改 `--dry-run`；
+- 临时 OpenClaw 完整 Skill 安装；
+- 强密钥不回显、默认只读权限和配置无密钥；
+- 后台服务启动、状态、健康检查和停止；
 - 前端 JavaScript、双语词典和 TypeScript 生产构建；
 - Windows ZIP、runtime tar.gz 与 SHA256 校验。
 
-详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.6.0.md](docs/RELEASE_NOTES_v0.6.0.md)。
+详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.7.0.md](docs/RELEASE_NOTES_v0.7.0.md)。
 
 ## 免责声明
 

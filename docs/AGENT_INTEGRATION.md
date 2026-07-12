@@ -1,11 +1,25 @@
 # BossAI Radar Skill 与 MCP 接入指南
 
-BossAI Radar Lite v0.6 同时提供两层 Agent 接口：
+BossAI Radar Lite v0.7 提供 Agent 自安装层，并继续提供两层运行接口：
 
 1. **MCP Server**：向支持 MCP 的 Agent 暴露结构化工具和 Prompt；
 2. **SKILL.md + JSON CLI**：向 OpenClaw、Hermes 或没有 MCP 的 Agent 提供操作规范与命令行后备入口。
 
 业务逻辑只有一套，所有 Agent 最终调用同一个 Radar HTTP API。
+
+## 0. 推荐：让 Agent 从 GitHub 自己安装
+
+把仓库地址交给 Agent，并要求它读取根目录的 `agent-install.json`、`AGENT_INSTALL.md`、`AGENTS.md` 或 `CLAUDE.md`。
+
+一条命令入口：
+
+```powershell
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+```
+
+支持：`openclaw`、`hermes`、`claude`、`codex`。安装器会完成稳定目录安装、依赖、构建、`.env`、强密钥、服务、Skill/MCP 注册和健康验证。默认关闭自动扫描、Agent 真实扫描和线索写入。
+
+下面的手动配置主要用于故障排查或定制部署。
 
 ## 1. 准备 Radar
 

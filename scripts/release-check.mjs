@@ -2,12 +2,17 @@ import { readFile, stat } from "node:fs/promises";
 
 const requiredFiles = [
   "LICENSE",
+  ".npmignore",
   "README.md",
   "README_EN.md",
   "CHANGELOG.md",
   "NOTICE",
   "CONTRIBUTING.md",
   "SECURITY.md",
+  "AGENT_INSTALL.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "agent-install.json",
   "docs/COMMERCIAL_LICENSE.md",
   "docs/COMMERCIAL_LICENSE_EN.md",
   "docs/LITE_VS_PRO.md",
@@ -19,7 +24,7 @@ const requiredFiles = [
   "docs/FOLLOWUP_GUIDE_EN.md",
   "docs/AGENT_INTEGRATION.md",
   "docs/AGENT_INTEGRATION_EN.md",
-  "docs/RELEASE_NOTES_v0.6.0.md",
+  "docs/RELEASE_NOTES_v0.7.0.md",
   "docs/assets/social-preview.svg",
   ".github/workflows/ci.yml",
   ".github/workflows/release.yml",
@@ -34,18 +39,22 @@ const requiredFiles = [
   "integrations/mcp/stdio-config.json.example",
   "integrations/mcp/codex-config.toml.example",
   "scripts/install-agent-skill.mjs",
+  "scripts/agent-bootstrap.mjs",
+  "scripts/radar-service.mjs",
   "src/leads.ts",
   "src/followups.ts",
   "src/radar-api-client.ts",
   "src/mcp.ts",
   "src/mcp-server.ts",
   "src/agent-cli.ts",
+  "src/local-env.ts",
   "dist/src/server.js",
   "dist/src/followups.js",
   "dist/src/radar-api-client.js",
   "dist/src/mcp.js",
   "dist/src/mcp-server.js",
   "dist/src/agent-cli.js",
+  "dist/src/local-env.js",
   "dist/public/index.html",
   "dist/public/commercial.html",
   "dist/public/leads.html",
@@ -70,7 +79,17 @@ const commercialPage = await readFile("public/commercial.html", "utf8");
 const readme = await readFile("README.md", "utf8");
 const readmeEnglish = await readFile("README_EN.md", "utf8");
 const license = await readFile("LICENSE", "utf8");
+const installManifest = JSON.parse(await readFile("agent-install.json", "utf8"));
 
+if (installManifest.version !== packageJson.version) {
+  failures.push("agent-install.json and package.json versions do not match");
+}
+if (packageJson.bin?.["bossai-radar-install"] !== "scripts/agent-bootstrap.mjs") {
+  failures.push("package.json must expose the bossai-radar-install bin");
+}
+if (!readme.includes("npx -y github:liufeng1976/bossai-radar-lite") || !readmeEnglish.includes("npx -y github:liufeng1976/bossai-radar-lite")) {
+  failures.push("Chinese and English READMEs must expose the GitHub self-install command");
+}
 if (!versionSource.includes(`APP_VERSION = "${packageJson.version}"`)) {
   failures.push("package.json and src/version.ts versions do not match");
 }

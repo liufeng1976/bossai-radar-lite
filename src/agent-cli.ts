@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./local-env.js";
 import { RadarApiClient, RadarApiError, type LeadPatch } from "./radar-api-client.js";
 import type { LeadActivityType, LeadIntent, LeadPriority, LeadStatus } from "./types.js";
 

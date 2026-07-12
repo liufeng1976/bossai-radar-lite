@@ -39,7 +39,13 @@ Never assume optional tools exist. Never request deletion: the agent interface i
 
 ## CLI fallback
 
-When MCP is unavailable, call the JSON CLI from the Radar project:
+When MCP is unavailable, resolve the Radar home directory in this order:
+
+1. read `radarHome` from `config.json` beside this `SKILL.md`;
+2. use the `RADAR_LITE_HOME` environment variable;
+3. if neither exists, report that the self-installer must be run.
+
+Then call the JSON CLI from the resolved Radar directory:
 
 ```bash
 node "$RADAR_LITE_HOME/dist/src/agent-cli.js" health

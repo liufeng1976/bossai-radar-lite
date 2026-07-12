@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.7.0 - 2026-07-12
+
+### Added
+
+- One-command GitHub and npx Agent self-installer
+- Machine-readable agent-install.json manifest
+- Bilingual AGENT_INSTALL.md
+- Root AGENTS.md and CLAUDE.md execution instructions
+- Stable installation directory with automatic file updates
+- Safe dependency install and production build
+- Local administrator-key generation without terminal disclosure
+- Background Radar service manager with PID, logs, start, stop, restart, and status
+- Automatic OpenClaw and Hermes Skill installation
+- Automatic Codex, Claude Code, and Hermes MCP registration
+- Optional portable workspace Skill installation
+- Cross-working-directory local .env loading for MCP and CLI
+- Dry-run, remote API, skip, workspace, scope, and explicit permission options
+- Installed-version versus running-API verification
+
+### Security
+
+- Self-install remains read-only by default
+- Scheduled scans, live Agent scans, and lead writes are disabled
+- Administrator keys remain only in the Radar .env file
+- Agent MCP and Skill configuration contains no administrator key
+- Remote API startup requires an explicit skip-service option
+- Install directories cannot be nested inside the source repository
+- Delete tools and automatic customer messaging remain unavailable
+
+### Validation
+
+- Local npx package-bin execution passed
+- Mutation-free dry-run passed
+- Temporary OpenClaw self-install passed
+- Strong-key secrecy and safe permission defaults passed
+- Cross-directory .env resolution passed
+- Background service lifecycle passed
+
 ## 0.6.0 - 2026-07-12
 
 ### Added

@@ -2,7 +2,8 @@
 
 ## 代码与版本
 
-- [ ] `package.json`、`src/version.ts`、页面页脚版本一致
+- [ ] `package.json`、`src/version.ts`、页面页脚和 `agent-install.json` 版本一致
+- [ ] `package.json` 暴露 `bossai-radar-install` bin
 - [ ] `npm run release:check` 全部通过
 - [ ] 自动化测试无失败、跳过或待办项
 - [ ] TypeScript 生产构建通过
@@ -42,6 +43,10 @@
 - [ ] 不把原始 IP、Cookie、设备指纹或管理员密钥写入线索数据库
 - [ ] 线索去重、限流、蜜罐、同意确认和删除级联通过测试
 - [ ] 多币种报价分别统计，不把不同币种直接相加
+- [ ] 自安装器不打印或复制管理员密钥到 Agent 配置
+- [ ] 默认关闭自动扫描、Agent 真实扫描和线索写入
+- [ ] 远程 API 必须使用 `--skip-service`
+- [ ] `.radar/` PID 与日志未进入 Git 或发布包
 - [ ] MCP 和 JSON CLI 默认只读，扫描与线索写入分别显式开启
 - [ ] Agent 接口不暴露删除线索工具
 - [ ] Skill 不包含下载管道、混淆命令或破坏性 Shell 指令
@@ -49,6 +54,10 @@
 
 ## 用户体验
 
+- [ ] GitHub / npx 自安装入口可运行
+- [ ] `--dry-run` 不修改文件和 Agent 配置
+- [ ] OpenClaw 临时工作区自安装可运行
+- [ ] 后台服务 start / status / stop 生命周期通过
 - [ ] Windows 一键启动脚本可运行
 - [ ] 首次启动有明确扫描状态
 - [ ] 可手动载入演示数据
@@ -84,3 +93,4 @@
 - [ ] 发布包 ZIP、tar.gz 与 SHA256 校验生成成功
 - [ ] GitHub 仓库描述明确写“non-commercial source-available”
 - [ ] Release Notes 不使用“完全免费商用”等误导表述
+- [ ] 发布包包含 `AGENT_INSTALL.md`、`AGENTS.md`、`CLAUDE.md`、`agent-install.json` 和服务管理脚本

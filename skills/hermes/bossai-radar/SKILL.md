@@ -9,6 +9,8 @@ Use BossAI Radar as a bounded tool inside a larger workflow. Radar discovers and
 
 ## Interfaces
 
+The repository self-installer registers the MCP server, copies this Skill into the Hermes home directory, and writes a non-secret `config.json` beside the Skill. Resolve `radarHome` from that file when CLI fallback is needed. Permissions and the administrator key remain in the Radar installation `.env`; do not request or print the key.
+
 Preferred: configure the local stdio MCP server:
 
 ```bash

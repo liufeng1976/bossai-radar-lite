@@ -23,7 +23,7 @@ const pageVersion = document.querySelector("#pageVersion");
 const intentButtons = [...document.querySelectorAll(".intent-button")];
 
 let contactEmail = DEFAULT_CONTACT_EMAIL;
-let appVersion = "0.6.0";
+let appVersion = "0.7.0";
 let leadCaptureEnabled = false;
 let submitting = false;
 

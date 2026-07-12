@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./local-env.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createRadarMcpServer } from "./mcp.js";
 

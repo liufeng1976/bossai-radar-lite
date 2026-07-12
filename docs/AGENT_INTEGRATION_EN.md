@@ -1,11 +1,25 @@
 # BossAI Radar Skill and MCP Integration Guide
 
-BossAI Radar Lite v0.6 provides two agent-facing layers:
+BossAI Radar Lite v0.7 adds an Agent self-install layer and continues to provide two runtime interfaces:
 
 1. **MCP Server** for structured tools and reusable prompts;
 2. **SKILL.md + JSON CLI** for OpenClaw, Hermes, or agents without MCP support.
 
 All integrations use the same Radar HTTP API and business rules.
+
+## Recommended: Let the Agent Install from GitHub
+
+Give the repository URL to the Agent and require it to read `agent-install.json`, `AGENT_INSTALL.md`, `AGENTS.md`, or `CLAUDE.md` from the repository root.
+
+One-command entry point:
+
+```powershell
+npx -y github:liufeng1976/bossai-radar-lite --agent codex
+```
+
+Supported values: `openclaw`, `hermes`, `claude`, and `codex`. The installer handles the stable install directory, dependencies, build, `.env`, a strong local key, background service, Skill/MCP registration, and health verification. Automatic scans, live Agent scans, and lead writes remain disabled by default.
+
+The manual steps below are primarily for troubleshooting and custom deployments.
 
 ## Prepare Radar
 

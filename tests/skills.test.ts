@@ -30,6 +30,33 @@ test("ships portable, OpenClaw, and Hermes skills with safe frontmatter", () => 
   assert.match(openClaw, /Never delete leads/i);
 });
 
+test("ships a versioned machine-readable self-install manifest and Agent instructions", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+    version: string;
+    bin?: Record<string, string>;
+  };
+  const manifest = JSON.parse(readFileSync("agent-install.json", "utf8")) as {
+    version: string;
+    installer: { bin: string; npx: string };
+    safeDefaults: Record<string, boolean | string>;
+  };
+  assert.equal(manifest.version, packageJson.version);
+  assert.equal(packageJson.bin?.["bossai-radar-install"], "scripts/agent-bootstrap.mjs");
+  assert.equal(manifest.installer.bin, "bossai-radar-install");
+  assert.match(manifest.installer.npx, /github:liufeng1976\/bossai-radar-lite/);
+  assert.equal(manifest.safeDefaults.liveScanTool, false);
+  assert.equal(manifest.safeDefaults.leadMutationTools, false);
+  assert.equal(manifest.safeDefaults.leadDeletionTool, false);
+  assert.equal(manifest.safeDefaults.automaticCustomerMessaging, false);
+
+  for (const file of ["AGENT_INSTALL.md", "AGENTS.md", "CLAUDE.md"]) {
+    const content = readFileSync(file, "utf8");
+    assert.match(content, /agent-bootstrap\.mjs|agent-install\.json/i);
+    assert.match(content, /read-only|只读/i);
+    assert.doesNotMatch(content, /RADAR_ADMIN_API_KEY=[A-Za-z0-9_-]{20,}/);
+  }
+});
+
 test("installs the OpenClaw skill into a workspace without changing configuration", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "radar-openclaw-workspace-"));
   try {

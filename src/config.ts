@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./local-env.js";
 import path from "node:path";
 
 function intFromEnv(name: string, fallback: number, min: number, max: number): number {
