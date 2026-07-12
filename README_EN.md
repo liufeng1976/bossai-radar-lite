@@ -120,6 +120,27 @@ http://127.0.0.1:3080/leads.html?lang=en
 
 Public deployments must protect the lead workspace with `RADAR_ADMIN_API_KEY`. See the [Commercial Lead Data Notice](docs/LEAD_PRIVACY_EN.md).
 
+## Daily Follow-Up and Sales Actions
+
+v0.5 automatically organizes active leads into four execution queues:
+
+- `OVERDUE`: the planned date has passed;
+- `TODAY`: due today;
+- `UNSCHEDULED`: active but missing a next follow-up date;
+- `UPCOMING`: due within the next seven days.
+
+The system combines due status, HOT / WARM / COOL, sales stage, launch timing and quote presence to rank urgency. It provides:
+
+- due-today and overdue metrics;
+- administrative reasons and actions in the current workspace language;
+- customer-facing email or message drafts in the lead's language;
+- a recommended next stage and next follow-up date;
+- one-click copy, local email-client launch and application of the recommended next step;
+- Chinese and English Markdown follow-up briefs;
+- a 30-day `.ics` calendar export.
+
+The system does not automatically send email, WeChat or SMS. See the [Daily Lead Follow-Up Guide](docs/FOLLOWUP_GUIDE_EN.md).
+
 ## Clearly Labeled Demo Data
 
 Click **Load Demo** to create nine synthetic evidence items and three opportunities:
@@ -314,6 +335,10 @@ See [SECURITY.md](SECURITY.md).
 | POST | `/api/leads` | Submit a commercial-license or Pro-waitlist application |
 | GET | `/api/admin/leads` | Search and filter leads as an administrator |
 | GET | `/api/admin/leads/stats` | Funnel and per-currency quote statistics |
+| GET | `/api/admin/followups?lang=en&days=7` | Get overdue, due-today, unscheduled and upcoming queues |
+| GET | `/api/admin/followups/report.md?lang=en` | Download a Chinese or English follow-up brief |
+| GET | `/api/admin/followups/calendar.ics` | Download the follow-up calendar |
+| GET | `/api/admin/leads/:id/followup-draft` | Generate a lead draft and recommended next step |
 | GET | `/api/admin/leads/export.csv` | Export lead data as CSV |
 | GET | `/api/admin/leads/:id` | Read a lead and its activity history |
 | PATCH | `/api/admin/leads/:id` | Update status, priority, owner, quote and follow-up time |
@@ -361,9 +386,12 @@ The release gate checks:
 - legacy database migration;
 - demo/live evidence isolation;
 - lead validation, scoring, deduplication, lifecycle and deletion;
+- OVERDUE / TODAY / UNSCHEDULED / UPCOMING queue classification and ordering;
+- bilingual customer drafts, recommended stages and next-follow-up dates;
+- bilingual follow-up reports and iCalendar export;
 - public submission and administrator authorization boundaries;
 - multi-currency pipeline statistics and CSV export;
-- English report generation;
+- English opportunity report generation;
 - frontend JavaScript syntax;
 - Chinese/English dictionary completeness;
 - TypeScript production build;

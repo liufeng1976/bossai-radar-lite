@@ -13,7 +13,9 @@ const state = {
   adminKey: sessionStorage.getItem("radar-admin-key") || "",
   leads: [],
   stats: null,
+  followups: null,
   current: null,
+  currentDraft: null,
   loading: false,
 };
 
@@ -30,8 +32,14 @@ const els = {
   totalMetric: document.querySelector("#leadTotal"),
   activeMetric: document.querySelector("#leadActive"),
   hotMetric: document.querySelector("#leadHot"),
+  dueTodayMetric: document.querySelector("#leadDueToday"),
+  overdueMetric: document.querySelector("#leadOverdue"),
   quotedMetric: document.querySelector("#leadQuoted"),
   wonMetric: document.querySelector("#leadWon"),
+  followupQueue: document.querySelector("#followupQueue"),
+  followupEmpty: document.querySelector("#followupEmpty"),
+  downloadFollowupReport: document.querySelector("#downloadFollowupReport"),
+  downloadFollowupCalendar: document.querySelector("#downloadFollowupCalendar"),
   funnel: document.querySelector("#leadFunnel"),
   rows: document.querySelector("#leadRows"),
   empty: document.querySelector("#leadEmpty"),
@@ -57,6 +65,12 @@ const els = {
   detailFollowup: document.querySelector("#detailFollowup"),
   saveButton: document.querySelector("#saveLeadButton"),
   deleteButton: document.querySelector("#deleteLeadButton"),
+  followupRecommendedAction: document.querySelector("#followupRecommendedAction"),
+  followupSubject: document.querySelector("#followupSubject"),
+  followupMessage: document.querySelector("#followupMessage"),
+  copyFollowupDraft: document.querySelector("#copyFollowupDraft"),
+  openFollowupEmail: document.querySelector("#openFollowupEmail"),
+  applyFollowupSuggestion: document.querySelector("#applyFollowupSuggestion"),
   activityType: document.querySelector("#activityType"),
   activityContent: document.querySelector("#activityContent"),
   addActivityButton: document.querySelector("#addActivityButton"),
@@ -77,6 +91,8 @@ function wireEvents() {
   });
   els.refreshButton.addEventListener("click", loadWorkspace);
   els.exportButton.addEventListener("click", exportCsv);
+  els.downloadFollowupReport.addEventListener("click", () => downloadProtectedFile(`/api/admin/followups/report.md?lang=${language}&days=7`, `bossai-followups-${language}.md`));
+  els.downloadFollowupCalendar.addEventListener("click", () => downloadProtectedFile("/api/admin/followups/calendar.ics?days=30", "bossai-followups.ics"));
   els.statusFilter.addEventListener("change", loadLeadList);
   els.intentFilter.addEventListener("change", loadLeadList);
   els.priorityFilter.addEventListener("change", loadLeadList);
@@ -88,6 +104,9 @@ function wireEvents() {
   els.detailForm.addEventListener("submit", (event) => event.preventDefault());
   els.saveButton.addEventListener("click", saveCurrentLead);
   els.deleteButton.addEventListener("click", deleteCurrentLead);
+  els.copyFollowupDraft.addEventListener("click", copyCurrentDraft);
+  els.openFollowupEmail.addEventListener("click", openCurrentDraftEmail);
+  els.applyFollowupSuggestion.addEventListener("click", applyCurrentSuggestion);
   els.addActivityButton.addEventListener("click", addActivity);
 }
 
@@ -95,15 +114,18 @@ async function loadWorkspace() {
   if (state.loading) return;
   setLoading(true);
   try {
-    const [stats, list] = await Promise.all([
+    const [stats, list, followups] = await Promise.all([
       adminRequest("/api/admin/leads/stats"),
       adminRequest(`/api/admin/leads?${filterParams()}`),
+      adminRequest(`/api/admin/followups?days=7&includeUnscheduled=true&lang=${language}`),
     ]);
     state.stats = stats;
     state.leads = list.items || [];
+    state.followups = followups;
     els.authPanel.hidden = true;
     setPageStatus("", false);
     renderStats();
+    renderFollowupQueue();
     renderFunnel();
     renderTable();
   } catch (error) {
@@ -145,8 +167,48 @@ function renderStats() {
   els.totalMetric.textContent = formatNumber(stats.total || 0);
   els.activeMetric.textContent = formatNumber(stats.active || 0);
   els.hotMetric.textContent = formatNumber(stats.hot || 0);
+  els.dueTodayMetric.textContent = formatNumber(state.followups?.stats?.today || 0);
+  els.overdueMetric.textContent = formatNumber(state.followups?.stats?.overdue || 0);
   els.quotedMetric.textContent = formatCurrencyBreakdown(stats.quotedByCurrency);
   els.wonMetric.textContent = formatCurrencyBreakdown(stats.wonByCurrency);
+}
+
+function renderFollowupQueue() {
+  const items = state.followups?.items || [];
+  els.followupEmpty.hidden = items.length > 0;
+  els.followupQueue.innerHTML = items.map((item) => {
+    const lead = item.lead;
+    const due = item.dueAt ? formatDateTime(item.dueAt) : t("followup.unscheduled");
+    return `
+      <article class="followup-card bucket-${item.bucket.toLowerCase()}">
+        <div class="followup-card-top">
+          <span class="followup-bucket">${escapeHtml(followupBucketLabel(item.bucket))}</span>
+          <span class="lead-priority priority-${lead.priority.toLowerCase()}">${escapeHtml(priorityLabel(lead.priority))}</span>
+        </div>
+        <h3>${escapeHtml(lead.name)}${lead.company ? ` · ${escapeHtml(lead.company)}` : ""}</h3>
+        <p class="followup-reason">${escapeHtml(item.reason)}</p>
+        <div class="followup-card-meta">
+          <span>${escapeHtml(statusLabel(lead.status))}</span>
+          <span>${escapeHtml(due)}</span>
+          <span>${escapeHtml(t("followup.urgency", { score: item.urgencyScore }))}</span>
+        </div>
+        <p class="followup-action-text">${escapeHtml(item.recommendedAction)}</p>
+        <div class="followup-card-actions">
+          <button class="text-button" type="button" data-followup-open="${escapeAttribute(lead.id)}">${escapeHtml(t("leads.open"))}</button>
+          <button class="text-button" type="button" data-followup-copy="${escapeAttribute(lead.id)}">${escapeHtml(t("followup.copyDraft"))}</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+  for (const button of els.followupQueue.querySelectorAll("[data-followup-open]")) {
+    button.addEventListener("click", () => openLead(button.dataset.followupOpen || ""));
+  }
+  for (const button of els.followupQueue.querySelectorAll("[data-followup-copy]")) {
+    button.addEventListener("click", async () => {
+      const item = items.find((entry) => entry.lead.id === button.dataset.followupCopy);
+      if (item) await copyText(`${item.draft.subject}\n\n${item.draft.message}`, t("followup.copied"), t("followup.copyFailed"));
+    });
+  }
 }
 
 function renderFunnel() {
@@ -191,8 +253,12 @@ function renderTable() {
 async function openLead(id) {
   if (!id) return;
   try {
-    const detail = await adminRequest(`/api/admin/leads/${encodeURIComponent(id)}`);
+    const [detail, draft] = await Promise.all([
+      adminRequest(`/api/admin/leads/${encodeURIComponent(id)}`),
+      adminRequest(`/api/admin/leads/${encodeURIComponent(id)}/followup-draft`),
+    ]);
     state.current = detail;
+    state.currentDraft = draft;
     renderLeadDetail();
     els.dialog.showModal();
   } catch (error) {
@@ -221,7 +287,17 @@ function renderLeadDetail() {
   els.detailQuote.value = lead.quoteAmount ?? "";
   els.detailCurrency.value = lead.quoteCurrency || "CNY";
   els.detailFollowup.value = toLocalDateTimeValue(lead.nextFollowUpAt);
+  renderFollowupDraft();
   renderActivities(detail.activities || []);
+}
+
+function renderFollowupDraft() {
+  const draft = state.currentDraft;
+  els.followupRecommendedAction.textContent = draft?.recommendedAction || "—";
+  els.followupSubject.textContent = draft?.subject || "—";
+  els.followupMessage.textContent = draft?.message || "—";
+  const email = extractEmail(state.current?.lead?.contact || "");
+  els.openFollowupEmail.disabled = !email;
 }
 
 function renderActivities(activities) {
@@ -279,6 +355,53 @@ async function deleteCurrentLead() {
   }
 }
 
+async function copyCurrentDraft() {
+  const draft = state.currentDraft;
+  if (!draft) return;
+  await copyText(`${draft.subject}\n\n${draft.message}`, t("followup.copied"), t("followup.copyFailed"));
+}
+
+function openCurrentDraftEmail() {
+  const lead = state.current?.lead;
+  const draft = state.currentDraft;
+  const email = extractEmail(lead?.contact || "");
+  if (!draft || !email) {
+    setPageStatus(t("followup.noEmail"), true);
+    return;
+  }
+  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.message)}`;
+}
+
+async function applyCurrentSuggestion() {
+  const lead = state.current?.lead;
+  const draft = state.currentDraft;
+  if (!lead || !draft) return;
+  try {
+    const detail = await adminRequest(`/api/admin/leads/${encodeURIComponent(lead.id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: draft.suggestedStatus,
+        nextFollowUpAt: draft.suggestedFollowUpAt,
+      }),
+    });
+    await adminRequest(`/api/admin/leads/${encodeURIComponent(lead.id)}/activities`, {
+      method: "POST",
+      body: JSON.stringify({ type: "NOTE", content: `${t("followup.appliedActivity")}: ${draft.recommendedAction}` }),
+    });
+    const [refreshed, nextDraft] = await Promise.all([
+      adminRequest(`/api/admin/leads/${encodeURIComponent(lead.id)}`),
+      adminRequest(`/api/admin/leads/${encodeURIComponent(lead.id)}/followup-draft`),
+    ]);
+    state.current = refreshed;
+    state.currentDraft = nextDraft;
+    renderLeadDetail();
+    setPageStatus(t("followup.applied"), false);
+    await refreshAfterMutation();
+  } catch {
+    setPageStatus(t("followup.applyFailed"), true);
+  }
+}
+
 async function addActivity() {
   const lead = state.current?.lead;
   const content = els.activityContent.value.trim();
@@ -300,15 +423,40 @@ async function addActivity() {
 }
 
 async function refreshAfterMutation() {
-  const [stats, list] = await Promise.all([
+  const [stats, list, followups] = await Promise.all([
     adminRequest("/api/admin/leads/stats"),
     adminRequest(`/api/admin/leads?${filterParams()}`),
+    adminRequest(`/api/admin/followups?days=7&includeUnscheduled=true&lang=${language}`),
   ]);
   state.stats = stats;
   state.leads = list.items || [];
+  state.followups = followups;
   renderStats();
+  renderFollowupQueue();
   renderFunnel();
   renderTable();
+}
+
+async function downloadProtectedFile(url, fallbackName) {
+  try {
+    const response = await adminFetch(url);
+    if (!response.ok) throw await responseError(response);
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = /filename=\"?([^\";]+)\"?/i.exec(disposition);
+    anchor.href = objectUrl;
+    anchor.download = match?.[1] || fallbackName;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
+    setPageStatus(t("followup.downloaded"), false);
+  } catch (error) {
+    if (error.status === 401) els.authPanel.hidden = false;
+    setPageStatus(t("followup.downloadFailed"), true);
+  }
 }
 
 async function exportCsv() {
@@ -367,6 +515,7 @@ function filterParams() {
   return params.toString();
 }
 
+function followupBucketLabel(value) { return t(`followup.bucket.${value}`); }
 function statusLabel(value) { return t(`lead.status.${value}`); }
 function intentLabel(value) { return t(`lead.intent.${value}`); }
 function priorityLabel(value) { return t(`lead.priority.${value}`); }
@@ -394,6 +543,19 @@ function localizeSystemActivity(content) {
   if (quote) return t("leads.activityQuote", { value: `${quote[1]} ${quote[2]}` });
   if (content === "Quote cleared") return t("leads.activityQuoteCleared");
   return content;
+}
+
+async function copyText(value, successMessage, errorMessage) {
+  try {
+    await navigator.clipboard.writeText(value);
+    setPageStatus(successMessage, false);
+  } catch {
+    setPageStatus(errorMessage, true);
+  }
+}
+
+function extractEmail(value) {
+  return String(value || "").match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
 }
 
 function formatCurrencyBreakdown(values) {
@@ -455,6 +617,10 @@ function setLoading(value) {
   els.saveButton.disabled = state.loading;
   els.deleteButton.disabled = state.loading;
   els.addActivityButton.disabled = state.loading;
+  els.copyFollowupDraft.disabled = state.loading;
+  els.applyFollowupSuggestion.disabled = state.loading;
+  els.downloadFollowupReport.disabled = state.loading;
+  els.downloadFollowupCalendar.disabled = state.loading;
 }
 
 function setPageStatus(message, error) {

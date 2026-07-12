@@ -17,7 +17,7 @@
 | Team accounts and permissions | No | Yes |
 | Multi-tenant isolation | No | Yes |
 | Feishu, Slack, email or enterprise messaging | No | Yes |
-| Commercial lead workspace | Single administrator, local SQLite, basic funnel and CSV | Multi-user assignment, automated outreach, external CRM integration and audit |
+| Commercial lead workspace | Single administrator, local SQLite, sales funnel, human-reviewed follow-up queue/drafts, brief, calendar and CSV | Multi-user assignment, automated outreach, external CRM integration, approval and audit |
 | Industry monitoring templates | Limited | Yes |
 | Private deployment | Self-managed evaluation only | Yes |
 | Managed hosting | No | Optional |

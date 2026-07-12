@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.5.0 - 2026-07-12
+
+### Added
+
+- OVERDUE, TODAY, UNSCHEDULED and UPCOMING follow-up queues
+- Urgency scoring based on due status, lead priority, sales stage, launch timing and quote presence
+- Due-today and overdue metrics in the commercial lead workspace
+- Bilingual administrative reasons and recommended actions
+- Customer-facing follow-up drafts generated in each lead's language
+- Recommended stage progression and next-follow-up dates
+- One-click copy, local email-client launch and recommendation application
+- Chinese and English Markdown follow-up briefs
+- 30-day iCalendar follow-up export
+- Automatic rescheduling of overdue calendar items to the nearest executable time
+- Chinese and English daily follow-up operating guides
+- Administrator APIs for follow-up queues, drafts, reports and calendars
+
+### Security
+
+- Follow-up actions remain human-reviewed and are never sent automatically
+- All follow-up APIs require administrator access
+- WON and LOST leads are excluded from active queues
+- Administrative language and customer-draft language are separated
+
+### Validation
+
+- Follow-up classification, sorting and urgency tests passed
+- Chinese and English draft generation tests passed
+- Recommended stage and next-date tests passed
+- Markdown follow-up report and iCalendar tests passed
+- Protected API integration tests passed
+- Frontend, bilingual dictionary and TypeScript build checks passed
+
 ## 0.4.0 - 2026-07-12
 
 ### Added

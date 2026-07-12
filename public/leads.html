@@ -48,8 +48,26 @@
         <article><span data-i18n="leads.total">全部线索</span><strong id="leadTotal">0</strong></article>
         <article><span data-i18n="leads.active">活跃漏斗</span><strong id="leadActive">0</strong></article>
         <article><span data-i18n="leads.hot">HOT 线索</span><strong id="leadHot">0</strong></article>
+        <article><span data-i18n="leads.dueToday">今日待跟进</span><strong id="leadDueToday">0</strong></article>
+        <article><span data-i18n="leads.overdue">已逾期</span><strong id="leadOverdue">0</strong></article>
         <article><span data-i18n="leads.quoted">报价总额</span><strong id="leadQuoted">0</strong></article>
         <article><span data-i18n="leads.won">已成交</span><strong id="leadWon">0</strong></article>
+      </section>
+
+      <section class="lead-followup-panel">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">TODAY'S ACTIONS</p>
+            <h2 data-i18n="followup.title">今日跟进队列</h2>
+            <p class="section-help" data-i18n="followup.description">先处理逾期和 HOT 线索，再处理今天到期；每次联系后安排下一次跟进。</p>
+          </div>
+          <div class="followup-actions">
+            <button class="button ghost" id="downloadFollowupReport" type="button" data-i18n="followup.downloadReport">下载跟进日报</button>
+            <button class="button ghost" id="downloadFollowupCalendar" type="button" data-i18n="followup.downloadCalendar">导出日历</button>
+          </div>
+        </div>
+        <div class="followup-queue" id="followupQueue"></div>
+        <div class="empty-state" id="followupEmpty" hidden data-i18n="followup.empty">当前没有需要跟进的活跃线索。</div>
       </section>
 
       <section class="lead-funnel-panel">
@@ -162,6 +180,23 @@
           <button class="button ghost danger-button" id="deleteLeadButton" type="button" data-i18n="leads.delete">删除线索</button>
           <button class="button primary detail-save" id="saveLeadButton" type="button" data-i18n="leads.save">保存线索</button>
         </div>
+
+        <section class="lead-draft-section">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">NEXT BEST ACTION</p>
+              <h3 data-i18n="followup.draftTitle">建议跟进话术</h3>
+            </div>
+          </div>
+          <p class="lead-draft-action" id="followupRecommendedAction">—</p>
+          <div class="lead-draft-subject"><span data-i18n="followup.subject">邮件主题</span><strong id="followupSubject">—</strong></div>
+          <pre class="lead-draft-message" id="followupMessage">—</pre>
+          <div class="detail-actions draft-actions">
+            <button class="button ghost" id="copyFollowupDraft" type="button" data-i18n="followup.copyDraft">复制话术</button>
+            <button class="button ghost" id="openFollowupEmail" type="button" data-i18n="followup.openEmail">打开邮件</button>
+            <button class="button primary" id="applyFollowupSuggestion" type="button" data-i18n="followup.applySuggestion">应用建议下一步</button>
+          </div>
+        </section>
 
         <section class="lead-activity-section">
           <div class="section-heading compact"><h3 data-i18n="leads.activity">跟进记录</h3></div>

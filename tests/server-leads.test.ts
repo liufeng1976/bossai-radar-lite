@@ -86,6 +86,47 @@ test("protects commercial lead administration while keeping public applications 
   const stats = await authorized.json() as { total: number };
   assert.equal(stats.total, 1);
 
+  const followupsWithoutKey = await fetch(`${baseUrl}/api/admin/followups`);
+  assert.equal(followupsWithoutKey.status, 401);
+
+  const nextFollowUpAt = new Date(Date.now() + 24 * 60 * 60 * 1_000).toISOString();
+  const scheduled = await fetch(`${baseUrl}/api/admin/leads/${leadId}`, {
+    method: "PATCH",
+    headers: { "x-radar-key": ADMIN_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "CONTACTED", nextFollowUpAt }),
+  });
+  assert.equal(scheduled.status, 200);
+
+  const followups = await fetch(`${baseUrl}/api/admin/followups?days=7`, {
+    headers: { "x-radar-key": ADMIN_KEY },
+  });
+  assert.equal(followups.status, 200);
+  const followupPayload = await followups.json() as { stats: { total: number }; items: Array<{ lead: { id: string }; bucket: string }> };
+  assert.equal(followupPayload.stats.total, 1);
+  assert.equal(followupPayload.items[0]?.lead.id, leadId);
+  assert.match(followupPayload.items[0]?.bucket || "", /TODAY|UPCOMING/);
+
+  const draft = await fetch(`${baseUrl}/api/admin/leads/${leadId}/followup-draft?lang=en`, {
+    headers: { "x-radar-key": ADMIN_KEY },
+  });
+  assert.equal(draft.status, 200);
+  const draftPayload = await draft.json() as { subject: string; message: string; suggestedStatus: string };
+  assert.match(draftPayload.subject, /BossAI Radar/);
+  assert.match(draftPayload.message, /API Buyer/);
+  assert.equal(draftPayload.suggestedStatus, "PROPOSAL");
+
+  const followupReport = await fetch(`${baseUrl}/api/admin/followups/report.md?lang=en`, {
+    headers: { "x-radar-key": ADMIN_KEY },
+  });
+  assert.equal(followupReport.status, 200);
+  assert.match(await followupReport.text(), /Commercial Lead Follow-Up Brief/);
+
+  const followupCalendar = await fetch(`${baseUrl}/api/admin/followups/calendar.ics`, {
+    headers: { "x-radar-key": ADMIN_KEY },
+  });
+  assert.equal(followupCalendar.status, 200);
+  assert.match(await followupCalendar.text(), /BEGIN:VCALENDAR/);
+
   const csvWithoutKey = await fetch(`${baseUrl}/api/admin/leads/export.csv`);
   assert.equal(csvWithoutKey.status, 401);
   const csvWithKey = await fetch(`${baseUrl}/api/admin/leads/export.csv`, {

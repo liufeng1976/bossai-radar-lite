@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config, publicConfig } from "./config.js";
 import { RadarDatabase } from "./database.js";
 import { seedDemoData } from "./demo.js";
+import { buildFollowUpQueue, createFollowUpCalendar, createFollowUpDraft, createFollowUpReport } from "./followups.js";
 import {
   LeadValidationError,
   normalizeActivityInput,
@@ -120,6 +121,42 @@ app.post("/api/leads", (req, res, next) => {
 
 app.get("/api/admin/leads/stats", requireLeadAdmin, (_req, res) => {
   res.json(db.leadStats());
+});
+
+app.get("/api/admin/followups", requireLeadAdmin, (req, res) => {
+  const queue = buildFollowUpQueue(db.listLeads({ limit: 2_000 }), {
+    windowDays: parseLimit(req.query.days, 7, 60),
+    includeUnscheduled: req.query.includeUnscheduled !== "false",
+    displayLanguage: req.query.lang === "en" ? "en" : "zh",
+  });
+  return res.json(queue);
+});
+
+app.get("/api/admin/followups/report.md", requireLeadAdmin, (req, res) => {
+  const language = req.query.lang === "en" ? "en" : "zh";
+  const queue = buildFollowUpQueue(db.listLeads({ limit: 2_000 }), {
+    windowDays: parseLimit(req.query.days, 7, 60),
+    includeUnscheduled: req.query.includeUnscheduled !== "false",
+    displayLanguage: language,
+  });
+  res.setHeader("Content-Disposition", `attachment; filename=bossai-followups-${language}-${new Date().toISOString().slice(0, 10)}.md`);
+  return res.type("text/markdown; charset=utf-8").send(createFollowUpReport(queue, language));
+});
+
+app.get("/api/admin/followups/calendar.ics", requireLeadAdmin, (req, res) => {
+  const queue = buildFollowUpQueue(db.listLeads({ limit: 2_000 }), {
+    windowDays: parseLimit(req.query.days, 30, 60),
+    includeUnscheduled: false,
+  });
+  res.setHeader("Content-Disposition", `attachment; filename=bossai-followups-${new Date().toISOString().slice(0, 10)}.ics`);
+  return res.type("text/calendar; charset=utf-8").send(createFollowUpCalendar(queue));
+});
+
+app.get("/api/admin/leads/:id/followup-draft", requireLeadAdmin, (req, res) => {
+  const lead = db.getLead(routeParam(req.params.id));
+  if (!lead) return res.status(404).json({ error: "Lead not found", code: "LEAD_NOT_FOUND" });
+  const language = req.query.lang === "en" ? "en" : req.query.lang === "zh" ? "zh" : lead.language;
+  return res.json(createFollowUpDraft(lead, new Date(), language));
 });
 
 app.get("/api/admin/leads/export.csv", requireLeadAdmin, (req, res) => {

@@ -111,6 +111,27 @@ http://127.0.0.1:3080/leads.html
 
 线索后台在公网环境必须使用 `RADAR_ADMIN_API_KEY`。详细数据说明见 [商业线索数据说明](docs/LEAD_PRIVACY.md)。
 
+### 每日跟进与销售行动
+
+v0.5 会把活跃线索自动整理为四类执行队列：
+
+- `OVERDUE`：已超过计划日期；
+- `TODAY`：今天到期；
+- `UNSCHEDULED`：活跃但没有下一次跟进时间；
+- `UPCOMING`：未来 7 天内到期。
+
+系统综合逾期、HOT / WARM / COOL、成交阶段、上线时间和报价生成紧迫度，并提供：
+
+- 今日到期与逾期数量；
+- 后台当前语言的原因和建议动作；
+- 客户语言的个性化邮件或消息话术；
+- 建议推进阶段和下一次跟进日期；
+- 一键复制、打开本机邮件客户端和应用建议下一步；
+- 中英文 Markdown 跟进日报；
+- 未来 30 天 `.ics` 日历导出。
+
+系统不会自动发送邮件、微信或短信。完整工作法见 [每日线索跟进工作法](docs/FOLLOWUP_GUIDE.md)。
+
 ### 明确标记的演示数据
 
 首次评估时可点击页面右上角的 **载入演示**。系统会生成 9 条合成证据和多个机会，用于展示完整界面。
@@ -285,6 +306,10 @@ RADAR_ADMIN_API_KEY=change-this-before-public-deployment
 | POST | `/api/leads` | 提交商业授权或 Pro 等待名单申请 |
 | GET | `/api/admin/leads` | 管理员查询和筛选线索 |
 | GET | `/api/admin/leads/stats` | 成交漏斗和多币种金额统计 |
+| GET | `/api/admin/followups?lang=zh&days=7` | 获取今日、逾期、未排期和未来跟进队列 |
+| GET | `/api/admin/followups/report.md?lang=zh` | 下载中文或英文跟进日报 |
+| GET | `/api/admin/followups/calendar.ics` | 下载跟进日历 |
+| GET | `/api/admin/leads/:id/followup-draft` | 生成单条线索跟进话术和建议下一步 |
 | GET | `/api/admin/leads/export.csv` | 导出线索 CSV |
 | GET | `/api/admin/leads/:id` | 读取线索与跟进记录 |
 | PATCH | `/api/admin/leads/:id` | 更新状态、优先级、负责人、报价和跟进时间 |
@@ -318,6 +343,7 @@ bossai-radar-lite/
 │   ├── database.ts             # SQLite 证据库和兼容迁移
 │   ├── demo.ts                 # 明确标记的合成演示数据
 │   ├── leads.ts                # 线索校验、评分与状态输入规范化
+│   ├── followups.ts            # 跟进队列、话术、日报和日历
 │   ├── pipeline.ts             # 全链路编排与失败隔离
 │   ├── report.ts               # CEO 日报
 │   ├── scheduler.ts            # 每日定点扫描
@@ -356,20 +382,22 @@ npm run release:check
 
 ## 当前验证状态
 
-v0.4.0 发布门禁覆盖：
+v0.5.0 发布门禁覆盖：
 
 - 数据库旧版 Schema 自动升级；
 - 演示数据与真实评分隔离；
 - 机会评分和 BUILD 门槛；
-- 中文与英文日报生成；
 - 商业线索校验、评分、等待名单分流和 24 小时去重；
+- OVERDUE / TODAY / UNSCHEDULED / UPCOMING 队列分类与排序；
+- 中英文客户话术、建议阶段和下一次跟进日期；
+- 中英文跟进日报与 iCalendar 导出；
+- 管理员语言和客户话术语言分离；
 - 多币种报价、状态、跟进活动和删除生命周期；
-- 中英文线索后台与 304 组配对词条；
-- 公开提交与管理员读写、导出、删除接口冒烟；
-- 前端 JavaScript 语法检查和 TypeScript 生产构建；
+- 公开提交与管理员读写、导出、删除、提醒接口冒烟；
+- 前端 JavaScript 语法检查、双语词典和 TypeScript 生产构建；
 - Windows ZIP、runtime tar.gz 与 SHA256 校验。
 
-详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.4.0.md](docs/RELEASE_NOTES_v0.4.0.md)。
+详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.5.0.md](docs/RELEASE_NOTES_v0.5.0.md)。
 
 ## 免责声明
 

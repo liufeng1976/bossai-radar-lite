@@ -158,3 +158,41 @@ export interface LeadStats {
   byStatus: Record<LeadStatus, number>;
   byIntent: Record<LeadIntent, number>;
 }
+
+export type FollowUpBucket = "OVERDUE" | "TODAY" | "UPCOMING" | "UNSCHEDULED";
+
+export interface FollowUpDraft {
+  language: "zh" | "en";
+  subject: string;
+  message: string;
+  recommendedAction: string;
+  suggestedStatus: LeadStatus;
+  suggestedFollowUpAt: string;
+}
+
+export interface FollowUpItem {
+  lead: Lead;
+  bucket: FollowUpBucket;
+  dueAt: string | null;
+  daysDelta: number | null;
+  urgencyScore: number;
+  reason: string;
+  recommendedAction: string;
+  draft: FollowUpDraft;
+}
+
+export interface FollowUpStats {
+  total: number;
+  overdue: number;
+  today: number;
+  upcoming: number;
+  unscheduled: number;
+  hot: number;
+}
+
+export interface FollowUpQueue {
+  generatedAt: string;
+  windowDays: number;
+  stats: FollowUpStats;
+  items: FollowUpItem[];
+}
