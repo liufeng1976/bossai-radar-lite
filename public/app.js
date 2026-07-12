@@ -1,3 +1,19 @@
+import {
+  applyI18n,
+  categoryLabel,
+  decisionLabel,
+  getLanguage,
+  initLanguageToggle,
+  t,
+} from "./i18n.js";
+
+const language = getLanguage();
+applyI18n(document, language);
+initLanguageToggle();
+document.title = t("dashboard.title", {}, language);
+const description = document.querySelector('meta[name="description"]');
+if (description) description.setAttribute("content", t("dashboard.description", {}, language));
+
 const state = {
   overview: null,
   opportunities: [],
@@ -8,10 +24,12 @@ const state = {
 
 const els = {
   scanButton: document.querySelector("#scanButton"),
+  scanButtonLabel: document.querySelector("#scanButton .button-label"),
   demoButton: document.querySelector("#demoButton"),
   licenseButton: document.querySelector("#licenseButton"),
   licenseDialog: document.querySelector("#licenseDialog"),
   licenseContact: document.querySelector("#licenseContact"),
+  reportButton: document.querySelector("#reportButton"),
   refreshButton: document.querySelector("#refreshButton"),
   systemStatus: document.querySelector("#systemStatus"),
   lastRunText: document.querySelector("#lastRunText"),
@@ -30,6 +48,7 @@ const els = {
   toast: document.querySelector("#toast"),
 };
 
+els.reportButton.href = `/api/report/latest.md?lang=${language}`;
 els.scanButton.addEventListener("click", runScan);
 els.demoButton.addEventListener("click", seedDemo);
 els.licenseButton.addEventListener("click", () => els.licenseDialog.showModal());
@@ -54,21 +73,24 @@ async function loadDashboard({ quiet = false } = {}) {
     state.runs = runs.items || [];
     render();
   } catch (error) {
-    setStatus("连接失败", "error");
-    if (!quiet) showToast(error.message || "无法读取雷达数据", true);
+    setStatus(t("status.connectionFailed"), "error");
+    if (!quiet) showToast(error.message || t("refresh.failed"), true);
   }
 }
 
 async function seedDemo() {
   if (els.demoButton.disabled) return;
   setActionLoading(true);
-  showToast("正在载入明确标记的合成演示数据…");
+  showToast(t("demo.start"));
   try {
     const result = await postWithAdminKey("/api/demo/seed");
-    showToast(`演示数据已载入：${result.run.evidenceCount} 条证据，${result.run.opportunityCount} 个机会。`);
+    showToast(t("demo.done", {
+      evidence: result.run.evidenceCount,
+      opportunities: result.run.opportunityCount,
+    }));
     await loadDashboard({ quiet: true });
   } catch (error) {
-    showToast(error.message || "演示数据载入失败", true);
+    showToast(error.message || t("demo.failed"), true);
   } finally {
     setActionLoading(false);
   }
@@ -77,14 +99,17 @@ async function seedDemo() {
 async function runScan() {
   if (els.scanButton.disabled) return;
   setScanLoading(true);
-  setStatus("扫描中", "running");
-  showToast("正在采集 Reddit、Hacker News 和 GitHub 公开证据…");
+  setStatus(t("status.scanning"), "running");
+  showToast(t("scan.start"));
   try {
     const result = await postWithAdminKey("/api/scan");
-    showToast(`扫描完成：采集 ${result.run.collectedCount} 条，形成 ${result.run.opportunityCount} 个机会。`);
+    showToast(t("scan.done", {
+      collected: result.run.collectedCount,
+      opportunities: result.run.opportunityCount,
+    }));
     await loadDashboard({ quiet: true });
   } catch (error) {
-    showToast(error.message || "扫描失败", true);
+    showToast(error.message || t("scan.failed"), true);
     await loadDashboard({ quiet: true });
   } finally {
     setScanLoading(false);
@@ -95,7 +120,6 @@ function render() {
   const overview = state.overview;
   const stats = overview?.stats || {};
   const latestRun = overview?.latestRun;
-  const latestReport = overview?.latestReport;
   const top = state.opportunities[0];
   configureCommercialContact(overview?.config?.commercial);
   els.demoButton.hidden = overview?.config?.demoEnabled === false;
@@ -105,19 +129,19 @@ function render() {
   els.sourceMetric.textContent = formatNumber(stats.sources || 0);
   els.runMetric.textContent = formatNumber(stats.runs || 0);
   els.topScore.textContent = top ? String(top.score) : "--";
-  els.executiveSummary.textContent = latestReport?.executiveSummary || "尚未生成日报。系统将在首次扫描后给出 CEO 结论。";
+  els.executiveSummary.textContent = localizedExecutiveSummary(overview, top);
   els.lastRunText.textContent = latestRun
-    ? `上次扫描 ${relativeTime(latestRun.finishedAt || latestRun.startedAt)} · ${latestRun.status.toUpperCase()}`
-    : "尚未执行扫描";
+    ? localizedLastRun(latestRun)
+    : t("status.noRun");
 
   if (overview?.running) {
-    setStatus("扫描中", "running");
+    setStatus(t("status.scanning"), "running");
     setScanLoading(true);
   } else if (latestRun?.status === "failed") {
-    setStatus("需检查", "error");
+    setStatus(t("status.error"), "error");
     setScanLoading(false);
   } else {
-    setStatus("系统在线", "");
+    setStatus(t("status.online"), "");
     setScanLoading(false);
   }
 
@@ -130,49 +154,61 @@ function render() {
 
 function renderOpportunities() {
   if (!state.opportunities.length) {
-    els.opportunityGrid.innerHTML = '<div class="empty-state">尚无机会数据，首次自动扫描完成后会在这里显示。</div>';
+    els.opportunityGrid.innerHTML = `<div class="empty-state">${escapeHtml(t("empty.opportunities"))}</div>`;
     return;
   }
-  els.opportunityGrid.innerHTML = state.opportunities.slice(0, 9).map((item) => `
-    <article class="opportunity-card">
-      <div class="opportunity-top">
-        <span class="decision ${decisionClass(item.decision)}">${escapeHtml(item.decision.replace("_", " "))}</span>
-        ${item.isDemo ? '<span class="demo-badge">DEMO</span>' : ""}
-        <span class="score-label"><strong>${number(item.score)}</strong> / 100</span>
-      </div>
-      <h4>${escapeHtml(item.title)}</h4>
-      <p>${escapeHtml(item.summary)}</p>
-      <div class="opportunity-meta">
-        <span>${number(item.evidenceCount)} 条证据</span>
-        <span>${number(item.sourceCount)} 个来源</span>
-        <span>${escapeHtml(item.category)}</span>
-      </div>
-      <div class="score-track" aria-label="机会评分 ${number(item.score)}"><span style="width:${Math.max(0, Math.min(100, Number(item.score) || 0))}%"></span></div>
-      <div class="price-row">
-        <span>建议商业验证</span>
-        <strong>${escapeHtml(item.priceHint)}</strong>
-      </div>
-    </article>
-  `).join("");
+  els.opportunityGrid.innerHTML = state.opportunities.slice(0, 9).map((item) => {
+    const display = localizedOpportunity(item);
+    return `
+      <article class="opportunity-card">
+        <div class="opportunity-top">
+          <span class="decision ${decisionClass(item.decision)}">${escapeHtml(decisionLabel(item.decision, language))}</span>
+          ${item.isDemo ? `<span class="demo-badge">${escapeHtml(t("common.demo"))}</span>` : ""}
+          <span class="score-label"><strong>${number(item.score)}</strong> / 100</span>
+        </div>
+        <h4>${escapeHtml(display.title)}</h4>
+        <p>${escapeHtml(display.summary)}</p>
+        <div class="opportunity-meta">
+          <span>${escapeHtml(t("evidence.items", { count: number(item.evidenceCount) }))}</span>
+          <span>${escapeHtml(t("evidence.sources", { count: number(item.sourceCount) }))}</span>
+          <span>${escapeHtml(categoryLabel(item.category, language))}</span>
+        </div>
+        <div class="score-track" aria-label="${escapeAttribute(`${display.title} ${number(item.score)}/100`)}"><span style="width:${Math.max(0, Math.min(100, Number(item.score) || 0))}%"></span></div>
+        <div class="price-row">
+          <span>${escapeHtml(t("opportunity.validation"))}</span>
+          <strong>${escapeHtml(display.priceHint)}</strong>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderEvidence() {
   if (!state.evidence.length) {
-    els.evidenceList.innerHTML = '<div class="empty-state">暂无证据。</div>';
+    els.evidenceList.innerHTML = `<div class="empty-state">${escapeHtml(t("empty.evidence"))}</div>`;
     return;
   }
-  els.evidenceList.innerHTML = state.evidence.map((item) => `
-    <article class="evidence-item">
-      <span class="source-badge">${escapeHtml(item.source)}</span>
-      <div class="evidence-copy">
-        ${item.isDemo
-          ? `<span class="evidence-title">${escapeHtml(item.title)}</span>`
-          : `<a href="${safeUrl(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.title)}</a>`}
-        <p>${item.isDemo ? "演示数据 · " : ""}${escapeHtml(item.category)} · ${relativeTime(item.publishedAt)} · 互动 ${number(item.engagement)}</p>
-      </div>
-      <span class="evidence-score">${number(item.totalScore)}</span>
-    </article>
-  `).join("");
+  els.evidenceList.innerHTML = state.evidence.map((item) => {
+    const title = localizedEvidenceTitle(item);
+    const detail = [
+      item.isDemo ? t("evidence.demoPrefix") : null,
+      categoryLabel(item.category, language),
+      relativeTime(item.publishedAt),
+      t("evidence.engagement", { count: number(item.engagement) }),
+    ].filter(Boolean).join(" · ");
+    return `
+      <article class="evidence-item">
+        <span class="source-badge">${escapeHtml(item.source)}</span>
+        <div class="evidence-copy">
+          ${item.isDemo
+            ? `<span class="evidence-title">${escapeHtml(title)}</span>`
+            : `<a href="${safeUrl(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(title)}</a>`}
+          <p>${escapeHtml(detail)}</p>
+        </div>
+        <span class="evidence-score">${number(item.totalScore)}</span>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderSources() {
@@ -181,9 +217,11 @@ function renderSources() {
   els.sourceList.innerHTML = names.map((name) => {
     const item = latest.find((source) => source.source === name);
     const status = item?.status || "idle";
-    const detail = item ? `${number(item.items?.length || 0)} 条 · ${number(item.durationMs || 0)}ms` : "等待首次扫描";
+    const detail = item
+      ? `${formatNumber(item.items?.length || 0)} ${language === "en" ? "items" : "条"} · ${formatNumber(item.durationMs || 0)}ms`
+      : t("source.waiting");
     return `
-      <div class="source-row" title="${escapeHtml(item?.error || "")}">
+      <div class="source-row" title="${escapeAttribute(item?.error || "")}">
         <i class="source-status ${escapeHtml(status)}"></i>
         <strong>${escapeHtml(name)}</strong>
         <span>${escapeHtml(detail)}</span>
@@ -195,14 +233,19 @@ function renderSources() {
 function renderSchedule() {
   const scheduler = state.overview?.scheduler;
   if (!scheduler?.enabled) {
-    els.nextRunText.textContent = "定时扫描未启用";
+    els.nextRunText.textContent = t("schedule.disabled");
     els.scheduleText.textContent = scheduler?.runOnStartup
-      ? "启动扫描已启用 · 可在 .env 开启每日定时"
-      : "启动扫描与每日定时均未启用";
+      ? (language === "en" ? "Startup scan enabled · Daily schedule disabled" : "启动扫描已启用 · 每日定时未启用")
+      : (language === "en" ? "Startup scan and daily schedule are disabled" : "启动扫描与每日定时均未启用");
     return;
   }
-  els.nextRunText.textContent = scheduler.nextRunAt ? formatDateTime(scheduler.nextRunAt) : "正在计算";
-  els.scheduleText.textContent = `每天 ${pad(scheduler.dailyHour)}:${pad(scheduler.dailyMinute)} · ${scheduler.timeZone} · 启动扫描${scheduler.runOnStartup ? "开启" : "关闭"}`;
+  els.nextRunText.textContent = scheduler.nextRunAt ? formatDateTime(scheduler.nextRunAt) : t("schedule.calculating");
+  const time = `${pad(scheduler.dailyHour)}:${pad(scheduler.dailyMinute)}`;
+  const base = t("schedule.daily", { time, timezone: scheduler.timeZone });
+  const startup = language === "en"
+    ? `Startup scan ${scheduler.runOnStartup ? "on" : "off"}`
+    : `启动扫描${scheduler.runOnStartup ? "开启" : "关闭"}`;
+  els.scheduleText.textContent = `${base} · ${startup}`;
 }
 
 function renderRuns() {
@@ -210,12 +253,91 @@ function renderRuns() {
     els.runHistory.innerHTML = "";
     return;
   }
-  els.runHistory.innerHTML = state.runs.map((run) => `
-    <div class="run-item">
-      <strong>#${number(run.id)} · ${escapeHtml(run.trigger)}</strong>
-      <span>${escapeHtml(run.status)} · ${number(run.collectedCount)} 条 · ${relativeTime(run.startedAt)}</span>
-    </div>
-  `).join("");
+  els.runHistory.innerHTML = state.runs.map((run) => {
+    const countText = language === "en" ? `${number(run.collectedCount)} items` : `${number(run.collectedCount)} 条`;
+    return `
+      <div class="run-item">
+        <strong>#${number(run.id)} · ${escapeHtml(localizedTrigger(run.trigger))}</strong>
+        <span>${escapeHtml(localizedRunStatus(run.status))} · ${escapeHtml(countText)} · ${escapeHtml(relativeTime(run.startedAt))}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function localizedExecutiveSummary(overview, top) {
+  if (language === "zh") return overview?.latestReport?.executiveSummary || t("status.noReport");
+  if (!top) return t("status.noReport");
+  const display = localizedOpportunity(top);
+  const run = overview?.latestRun;
+  const demoPrefix = run?.trigger === "demo" ? "Demo data: " : "";
+  return `${demoPrefix}${run?.collectedCount ?? 0} public items produced ${run?.opportunityCount ?? state.opportunities.length} opportunities. The current top priority is “${display.title}” (${top.score}/100, ${decisionLabel(top.decision, language)}).`;
+}
+
+function localizedLastRun(run) {
+  if (language === "en") return `Last scan ${relativeTime(run.finishedAt || run.startedAt)} · ${localizedRunStatus(run.status)}`;
+  return `上次扫描 ${relativeTime(run.finishedAt || run.startedAt)} · ${localizedRunStatus(run.status)}`;
+}
+
+function localizedOpportunity(item) {
+  if (language === "zh") {
+    return { title: item.title, summary: item.summary, priceHint: item.priceHint };
+  }
+  const definitions = {
+    "customer-support": ["AI Customer Support Copilot", "Generate reviewable support replies, refund guidance and logistics actions for ecommerce teams."],
+    "content-video": ["Ecommerce Content & Short-Video Assistant", "Turn product information into scripts, hooks, shot plans and publishing assets."],
+    "listing-seo": ["Listing & Keyword Optimization Tool", "Improve titles, bullets, keywords and multilingual product descriptions at scale."],
+    "ads-growth": ["Ads Diagnosis & Growth Assistant", "Translate campaign performance into actionable budget, audience and creative decisions."],
+    "store-automation": ["Ecommerce Operations Automation Workspace", "Detect order, inventory and workflow exceptions and generate clear operational actions."],
+    "analytics-research": ["Overseas Demand & Competitor Intelligence Radar", "Collect public market evidence and turn it into ranked opportunities and action reports."],
+    "developer-tools": ["AI Ecommerce Integration Toolkit", "Provide reusable APIs, workflow templates and observable integration components."],
+    general: ["AI Business Opportunity Validation", "Validate a recurring business pain with evidence before committing to product development."],
+  };
+  const [title, offer] = definitions[item.category] || definitions.general;
+  const actions = {
+    BUILD: "The evidence clears the build threshold; create a focused MVP and pursue the first paid users.",
+    SELL_SERVICE: "Start with a human-assisted paid service to validate willingness to pay before productizing.",
+    WATCH: "Continue collecting cross-source and explicit budget evidence before investing in development.",
+    IGNORE: "Evidence is currently too weak to justify development resources.",
+  };
+  return {
+    title,
+    summary: `${offer} ${actions[item.decision]} Evidence: ${item.evidenceCount} items across ${item.sourceCount} sources.`,
+    priceHint: englishPriceHint(item.category, item.decision),
+  };
+}
+
+function englishPriceHint(category, decision) {
+  if (decision === "IGNORE") return "No offer yet";
+  if (decision === "WATCH") return "Interviews or low-cost validation";
+  if (decision === "SELL_SERVICE") return category === "ads-growth" ? "$299–$999/month service" : "$149–$599 validation service";
+  return category === "developer-tools" ? "$29–$99/month" : "$99–$499/year or usage-based";
+}
+
+const demoEvidenceTitles = {
+  "demo-support-1": "More than 200 Shopify after-sales messages a day; the team will pay for AI reply drafts",
+  "demo-support-2": "Order status, tracking and refund policy need to live in one support workspace",
+  "demo-support-3": "Small ecommerce teams need controllable AI support, not fully autonomous replies",
+  "demo-content-1": "Too many products and too little time: the team needs batch short-video production",
+  "demo-content-2": "Batch ecommerce video generation lacks asset tracking and failure recovery",
+  "demo-content-3": "Sellers need a product-to-publishing workflow, not another isolated video model",
+  "demo-research-1": "Manual Reddit and competitor-review research is slow and lacks a shared evidence library",
+  "demo-research-2": "Founder intelligence tools need evidence, scoring and a clear do-not-build list",
+  "demo-research-3": "The radar needs source-level failure isolation, deduplication and auditable scoring",
+};
+
+function localizedEvidenceTitle(item) {
+  if (language === "en" && item.isDemo) return demoEvidenceTitles[item.externalId] || item.title;
+  return item.title;
+}
+
+function localizedTrigger(trigger) {
+  if (language === "zh") return ({ manual: "手动", startup: "启动", scheduled: "定时", demo: "演示" })[trigger] || trigger;
+  return ({ manual: "manual", startup: "startup", scheduled: "scheduled", demo: "demo" })[trigger] || trigger;
+}
+
+function localizedRunStatus(status) {
+  if (language === "zh") return ({ running: "运行中", success: "成功", partial: "部分成功", failed: "失败" })[status] || status;
+  return ({ running: "RUNNING", success: "SUCCESS", partial: "PARTIAL", failed: "FAILED" })[status] || status;
 }
 
 function setActionLoading(loading) {
@@ -226,8 +348,7 @@ function setActionLoading(loading) {
 function setScanLoading(loading) {
   setActionLoading(loading);
   els.scanButton.classList.toggle("loading", Boolean(loading));
-  const textNode = [...els.scanButton.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
-  if (textNode) textNode.textContent = loading ? " 扫描中" : " 立即扫描";
+  els.scanButtonLabel.textContent = loading ? t("button.scanning") : t("button.scan");
 }
 
 function setStatus(text, kind) {
@@ -253,7 +374,7 @@ async function postWithAdminKey(url, retry = true) {
     });
   } catch (error) {
     if (retry && error.status === 401) {
-      const key = window.prompt("请输入 RADAR_ADMIN_API_KEY。密钥只保存在本次浏览器会话中。", state.adminKey);
+      const key = window.prompt(t("admin.prompt"), state.adminKey);
       if (key?.trim()) {
         state.adminKey = key.trim();
         sessionStorage.setItem("radar-admin-key", state.adminKey);
@@ -265,20 +386,9 @@ async function postWithAdminKey(url, retry = true) {
 }
 
 function configureCommercialContact(commercial) {
-  const email = typeof commercial?.email === "string" ? commercial.email.trim() : "";
   const url = typeof commercial?.url === "string" ? commercial.url.trim() : "";
-  if (url) {
-    els.licenseContact.href = safeRawUrl(url);
-    els.licenseContact.textContent = "打开商业授权页面";
-    return;
-  }
-  if (email) {
-    els.licenseContact.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent("BossAI Radar Lite 商业授权咨询")}`;
-    els.licenseContact.textContent = `邮件联系 ${email}`;
-    return;
-  }
-  els.licenseContact.removeAttribute("href");
-  els.licenseContact.textContent = "请在 .env 配置授权联系方式";
+  els.licenseContact.href = url ? safeRawUrl(url) : `/commercial.html?intent=commercial&lang=${language}`;
+  els.licenseContact.textContent = url ? (language === "en" ? "Open Commercial License Page" : "打开商业授权页面") : t("license.apply");
 }
 
 async function api(url, options = {}) {
@@ -304,21 +414,29 @@ function decisionClass(decision) {
 }
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("zh-CN", { notation: Number(value) > 9999 ? "compact" : "standard" }).format(Number(value) || 0);
+  return new Intl.NumberFormat(language === "en" ? "en-US" : "zh-CN", {
+    notation: Number(value) > 9999 ? "compact" : "standard",
+  }).format(Number(value) || 0);
 }
 
 function formatDateTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "未知";
-  return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  if (Number.isNaN(date.getTime())) return t("common.unknown");
+  return new Intl.DateTimeFormat(language === "en" ? "en-US" : "zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: language === "en",
+  }).format(date);
 }
 
 function relativeTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "未知时间";
+  if (Number.isNaN(date.getTime())) return t("common.unknown");
   const seconds = Math.round((date.getTime() - Date.now()) / 1000);
   const absolute = Math.abs(seconds);
-  const formatter = new Intl.RelativeTimeFormat("zh-CN", { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(language === "en" ? "en-US" : "zh-CN", { numeric: "auto" });
   if (absolute < 60) return formatter.format(seconds, "second");
   if (absolute < 3600) return formatter.format(Math.round(seconds / 60), "minute");
   if (absolute < 86_400) return formatter.format(Math.round(seconds / 3600), "hour");

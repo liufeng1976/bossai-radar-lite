@@ -6,6 +6,7 @@ import { config, publicConfig } from "./config.js";
 import { RadarDatabase } from "./database.js";
 import { seedDemoData } from "./demo.js";
 import { RadarEngine } from "./pipeline.js";
+import { createEnglishReport } from "./report.js";
 import { RadarScheduler } from "./scheduler.js";
 import { APP_NAME, APP_SLUG, APP_VERSION, LICENSE_LABEL } from "./version.js";
 
@@ -41,6 +42,7 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/overview", (_req, res) => {
   res.json({
+    version: APP_VERSION,
     stats: db.stats(),
     config: publicConfig(),
     running: engine.isRunning(),
@@ -72,12 +74,17 @@ app.get("/api/report/latest", (_req, res) => {
   return res.json(report);
 });
 
-app.get("/api/report/latest.md", (_req, res) => {
+app.get("/api/report/latest.md", (req, res) => {
   const report = db.latestReport();
-  if (!report) return res.status(404).type("text/plain").send("No report generated yet");
+  const run = db.listRuns(1)[0];
+  if (!report || !run) return res.status(404).type("text/plain").send("No report generated yet");
+  const language = req.query.lang === "en" ? "en" : "zh";
   const date = report.generatedAt.slice(0, 10);
-  res.setHeader("Content-Disposition", `attachment; filename=radar-report-${date}.md`);
-  return res.type("text/markdown; charset=utf-8").send(report.markdown);
+  const markdown = language === "en"
+    ? createEnglishReport(run, db.listOpportunities(50), db.listEvidence(100)).markdown
+    : report.markdown;
+  res.setHeader("Content-Disposition", `attachment; filename=radar-report-${language}-${date}.md`);
+  return res.type("text/markdown; charset=utf-8").send(markdown);
 });
 
 app.post("/api/scan", requireWriteAccess, async (_req, res, next) => {

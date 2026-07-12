@@ -1,5 +1,7 @@
 # BossAI Radar Lite 商业授权说明
 
+**中文** · [English](COMMERCIAL_LICENSE_EN.md)
+
 ## 免费许可覆盖范围
 
 BossAI Radar Lite 的源码公开可见，可免费用于：

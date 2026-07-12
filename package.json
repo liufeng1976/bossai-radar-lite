@@ -1,6 +1,6 @@
 {
   "name": "bossai-radar-lite",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "BossAI Radar Lite - source-available non-commercial overseas business opportunity radar",
   "type": "module",
@@ -9,9 +9,11 @@
     "start": "node dist/src/server.js",
     "build": "tsc -p tsconfig.json && node scripts/copy-public.mjs",
     "test": "tsx --test tests/**/*.test.ts",
-    "check:frontend": "node --check public/app.js",
-    "check": "npm run test && npm run check:frontend && npm run build",
-    "release:check": "npm run check && node scripts/release-check.mjs"
+    "check:frontend": "node --check public/app.js && node --check public/commercial.js && node --check public/i18n.js",
+    "check:i18n": "node scripts/i18n-check.mjs",
+    "check": "npm run test && npm run check:frontend && npm run check:i18n && npm run build",
+    "release:check": "npm run check && node scripts/release-check.mjs",
+    "package:release": "npm run release:check && node scripts/package-release.mjs"
   },
   "engines": {
     "node": ">=22.5.0"

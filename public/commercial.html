@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="BossAI Radar 商业授权申请与 Pro 版等待名单" />
+    <title>BossAI Radar 商业授权</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="commercial-page">
+    <header class="commercial-header">
+      <a class="brand" href="/" data-preserve-language>
+        <span class="brand-mark">B</span>
+        <span>
+          <strong>BossAI Radar</strong>
+          <small>COMMERCIAL &amp; PRO</small>
+        </span>
+      </a>
+      <div class="commercial-header-actions">
+        <button class="button ghost language-toggle" id="languageToggle" type="button">EN</button>
+        <a class="button ghost" href="/" data-preserve-language data-i18n="commercial.back">返回 Lite 仪表盘</a>
+      </div>
+    </header>
+
+    <main class="commercial-main">
+      <section class="commercial-hero">
+        <div>
+          <p class="eyebrow" data-i18n="commercial.heroEyebrow">从信号到收入</p>
+          <h1 data-i18n="commercial.heroTitle">把 Lite 的市场信号，升级成可经营的商业系统</h1>
+          <p data-i18n="commercial.heroBody">Lite 用于学习、研究和非商业评估。企业经营、客户交付、SaaS 收费、付费课程、白标和二次销售均需要单独商业授权。</p>
+        </div>
+        <div class="commercial-hero-stat">
+          <span data-i18n="commercial.localTitle">授权申请</span>
+          <strong data-i18n="commercial.localStrong">本地生成</strong>
+          <small data-i18n="commercial.localHelp">不经过第三方表单服务</small>
+        </div>
+      </section>
+
+      <section class="license-tiers" aria-label="版本选择">
+        <article class="tier-card">
+          <span class="tier-label" data-i18n="tier.liteLabel">LITE</span>
+          <h2 data-i18n="tier.liteTitle">源码开放非商业版</h2>
+          <p data-i18n="tier.liteBody">适合个人学习、技术研究、产品评估和非商业演示。</p>
+          <ul>
+            <li data-i18n="tier.lite1">Reddit、HN、GitHub 公开源</li>
+            <li data-i18n="tier.lite2">本地 SQLite 与确定性评分</li>
+            <li data-i18n="tier.lite3">单机仪表盘和日报</li>
+          </ul>
+          <a class="button ghost" href="/" data-preserve-language data-i18n="tier.liteCta">继续使用 Lite</a>
+        </article>
+
+        <article class="tier-card featured">
+          <span class="tier-label" data-i18n="tier.licenseLabel">商业许可</span>
+          <h2 data-i18n="tier.licenseTitle">商业使用授权</h2>
+          <p data-i18n="tier.licenseBody">保留 Lite 架构，用于企业经营、咨询交付、课程、客户项目或内部商业流程。</p>
+          <ul>
+            <li data-i18n="tier.license1">合法商业使用权</li>
+            <li data-i18n="tier.license2">部署与使用范围约定</li>
+            <li data-i18n="tier.license3">可选实施、培训和技术支持</li>
+          </ul>
+          <button class="button primary intent-button" type="button" data-intent="commercial" data-i18n="tier.licenseCta">申请商业授权</button>
+        </article>
+
+        <article class="tier-card">
+          <span class="tier-label" data-i18n="tier.proLabel">PRO 等待名单</span>
+          <h2 data-i18n="tier.proTitle">BossAI Radar Pro</h2>
+          <p data-i18n="tier.proBody">面向团队和商业运营，增加更多情报源、通知、CRM、权限、行业模板及托管能力。</p>
+          <ul>
+            <li data-i18n="tier.pro1">付费需求与收入案例 Feed</li>
+            <li data-i18n="tier.pro2">团队权限、消息推送和 CRM</li>
+            <li data-i18n="tier.pro3">托管部署、白标和 SLA</li>
+          </ul>
+          <button class="button ghost intent-button" type="button" data-intent="pro-waitlist" data-i18n="tier.proCta">加入 Pro 等待名单</button>
+        </article>
+      </section>
+
+      <section class="application-layout" id="application">
+        <div class="application-copy">
+          <p class="eyebrow" data-i18n="application.eyebrow">结构化申请</p>
+          <h2 data-i18n="application.title">提交使用场景，我们按商业模式评估授权</h2>
+          <p data-i18n="application.body">页面不会把表单上传到任何服务器。点击发送时只会打开你设备上的邮件客户端；也可以复制申请内容，通过微信或其他方式发送。</p>
+          <div class="boundary-list">
+            <div><strong data-i18n="application.requiredTitle">必须授权</strong><span data-i18n="application.requiredBody">收费 SaaS、企业内部经营、咨询交付、付费课程、白标、转售和商业集成。</span></div>
+            <div><strong data-i18n="application.notIncludedTitle">授权不自动包含</strong><span data-i18n="application.notIncludedBody">平台数据许可、第三方 API 费用、部署服务器、定制开发和长期技术支持。</span></div>
+            <div><strong data-i18n="application.explainTitle">建议说明清楚</strong><span data-i18n="application.explainBody">使用人数、客户数量、部署方式、预计上线时间和是否需要白标。</span></div>
+          </div>
+        </div>
+
+        <form class="application-form" id="licenseForm">
+          <div class="form-grid">
+            <label>
+              <span data-i18n="form.intent">申请类型</span>
+              <select name="intent" id="intentSelect" required>
+                <option value="commercial" data-i18n="form.intentCommercial">商业使用授权</option>
+                <option value="pro-waitlist" data-i18n="form.intentPro">Pro 版等待名单</option>
+                <option value="white-label" data-i18n="form.intentWhiteLabel">白标或二次销售</option>
+                <option value="managed-service" data-i18n="form.intentManaged">托管部署与实施</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="form.name">姓名</span>
+              <input name="name" autocomplete="name" maxlength="60" required placeholder="你的姓名" data-i18n-placeholder="form.namePlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="form.company">公司 / 团队</span>
+              <input name="company" autocomplete="organization" maxlength="100" placeholder="个人可填写“个人”" data-i18n-placeholder="form.companyPlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="form.contact">联系方式</span>
+              <input name="contact" maxlength="120" required placeholder="邮箱、微信或手机号" data-i18n-placeholder="form.contactPlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="form.teamSize">团队规模</span>
+              <select name="teamSize">
+                <option value="1" data-i18n="form.team1">1 人</option>
+                <option value="2-5" data-i18n="form.team2">2–5 人</option>
+                <option value="6-20" data-i18n="form.team3">6–20 人</option>
+                <option value="21-100" data-i18n="form.team4">21–100 人</option>
+                <option value="100+" data-i18n="form.team5">100 人以上</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="form.timeline">预计上线</span>
+              <select name="timeline">
+                <option value="now" data-i18n="form.timelineNow">立即</option>
+                <option value="30-days" data-i18n="form.timeline30">30 天内</option>
+                <option value="1-3-months" data-i18n="form.timeline90">1–3 个月</option>
+                <option value="later" data-i18n="form.timelineLater">3 个月以后</option>
+                <option value="research" data-i18n="form.timelineResearch">暂时调研</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="form.deployment">部署方式</span>
+              <select name="deployment">
+                <option value="local" data-i18n="form.deployLocal">本地单机</option>
+                <option value="intranet" data-i18n="form.deployIntranet">企业内网</option>
+                <option value="own-cloud" data-i18n="form.deployCloud">自有云服务器</option>
+                <option value="bossai-managed" data-i18n="form.deployManaged">希望 BossAI 托管</option>
+                <option value="unknown" data-i18n="form.deployUnknown">尚未确定</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="form.budget">预算范围</span>
+              <select name="budget">
+                <option value="unknown" data-i18n="form.budgetUnknown">待评估</option>
+                <option value="under-1000" data-i18n="form.budget1">¥1,000 以下</option>
+                <option value="1000-5000" data-i18n="form.budget2">¥1,000–¥5,000</option>
+                <option value="5000-20000" data-i18n="form.budget3">¥5,000–¥20,000</option>
+                <option value="20000+" data-i18n="form.budget4">¥20,000 以上</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="full-field">
+            <span data-i18n="form.scenario">使用场景与预期结果</span>
+            <textarea name="scenario" rows="5" maxlength="1200" required placeholder="例如：用于给 20 家电商客户输出海外需求周报，需要团队账号、飞书推送和白标报告。" data-i18n-placeholder="form.scenarioPlaceholder"></textarea>
+          </label>
+
+          <label class="full-field">
+            <span data-i18n="form.requirements">需要的能力</span>
+            <textarea name="requirements" rows="4" maxlength="1000" placeholder="例如：X / Product Hunt / Upwork、飞书、CRM、行业模板、私有部署、培训、源码交付等。" data-i18n-placeholder="form.requirementsPlaceholder"></textarea>
+          </label>
+
+          <label class="consent-field">
+            <input type="checkbox" name="consent" required />
+            <span data-i18n="form.consent">我理解 Lite 版禁止未授权商业使用，提交申请不代表授权已生效，最终以双方书面授权文件为准。</span>
+          </label>
+
+          <div class="form-actions">
+            <button class="button ghost" id="previewButton" type="button" data-i18n="form.preview">生成申请预览</button>
+            <button class="button ghost" id="copyButton" type="button" data-i18n="form.copy">复制申请内容</button>
+            <button class="button primary" type="submit" data-i18n="form.send">打开邮件发送</button>
+          </div>
+
+          <div class="application-preview" id="applicationPreview" hidden>
+            <div>
+              <strong data-i18n="form.previewTitle">申请预览</strong>
+              <button type="button" class="text-button" id="closePreviewButton" data-i18n="form.collapse">收起</button>
+            </div>
+            <pre id="previewContent"></pre>
+          </div>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="commercial-footer">
+      <span>BossAI Radar Lite <strong id="pageVersion">v0.3.0</strong></span>
+      <span data-i18n="footer.license">源码开放 · 非商业许可 · 商业使用需授权</span>
+    </footer>
+
+    <script type="module" src="/commercial.js"></script>
+  </body>
+</html>

@@ -1,5 +1,7 @@
 # BossAI Radar Lite 与商业 Pro 版边界
 
+**中文** · [English](LITE_VS_PRO_EN.md)
+
 Lite 的目标是让用户验证“公开证据 → 机会评分 → CEO 行动”的核心方法；Pro 的目标是支持企业持续经营、团队协作和客户交付。
 
 | 能力 | Lite 源码开放非商业版 | Pro 商业版 |

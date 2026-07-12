@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.0 - 2026-07-12
+
+### Added
+
+- Complete Chinese and English dashboard with persistent language switching
+- Localized opportunity titles, decisions, categories, pricing, source status and time formatting
+- English display text for all synthetic demo evidence
+- Bilingual commercial-license application and BossAI Radar Pro waitlist
+- Local-only application preview, clipboard copy and email generation
+- English Markdown report generation from structured opportunity data
+- English GitHub project documentation in `README_EN.md`
+- Automated bilingual dictionary completeness checks
+- GitHub Actions CI and tag-triggered Release workflow
+- Windows ZIP, runtime tar.gz and SHA256 release packaging
+
+### Changed
+
+- Report download now accepts `?lang=zh` or `?lang=en`
+- `/api/overview` now exposes the application version
+- Commercial-license and Pro links preserve the selected language
+
+### Validation
+
+- Backend automated tests: 12 passed
+- Frontend JavaScript syntax checks: passed
+- Bilingual dictionary check: 186 used keys and 201 paired entries passed
+- TypeScript production build: passed
+
 ## 0.2.0 - 2026-07-12
 
 ### Added

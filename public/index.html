@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="BossAI Radar Lite - 自动采集海外公开商业证据并生成机会日报" />
-    <title>BossAI Radar Lite</title>
+    <meta name="description" content="自动采集海外公开商业证据并生成机会日报" />
+    <title>BossAI Radar Lite｜海外商业机会雷达</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -14,22 +14,22 @@
           <div class="brand-mark">B</div>
           <div>
             <strong>BossAI Radar</strong>
-            <span>LITE · SOURCE AVAILABLE</span>
+            <span data-i18n="brand.subtitle">LITE · 源码开放</span>
           </div>
         </div>
 
         <nav class="nav">
-          <a class="nav-item active" href="#overview"><span>01</span>CEO 总览</a>
-          <a class="nav-item" href="#opportunities"><span>02</span>机会优先级</a>
-          <a class="nav-item" href="#evidence"><span>03</span>证据库</a>
-          <a class="nav-item" href="#operations"><span>04</span>运行状态</a>
+          <a class="nav-item active" href="#overview"><span>01</span><b data-i18n="nav.overview">CEO 总览</b></a>
+          <a class="nav-item" href="#opportunities"><span>02</span><b data-i18n="nav.opportunities">机会优先级</b></a>
+          <a class="nav-item" href="#evidence"><span>03</span><b data-i18n="nav.evidence">证据库</b></a>
+          <a class="nav-item" href="#operations"><span>04</span><b data-i18n="nav.operations">运行状态</b></a>
         </nav>
 
         <div class="sidebar-note">
           <span class="signal-dot"></span>
           <div>
-            <strong>源码开放非商业版</strong>
-            <p>学习、研究、评估免费。商业使用须获得 BossAI 书面授权。</p>
+            <strong data-i18n="sidebar.licenseTitle">源码开放非商业版</strong>
+            <p data-i18n="sidebar.licenseBody">学习、研究、评估免费。商业使用须获得 BossAI 书面授权。</p>
           </div>
         </div>
       </aside>
@@ -37,16 +37,18 @@
       <main class="main">
         <header class="topbar">
           <div>
-            <p class="eyebrow">OVERSEAS BUSINESS INTELLIGENCE</p>
-            <h1>今天，市场在为什么付钱？</h1>
+            <p class="eyebrow" data-i18n="header.eyebrow">海外商业情报</p>
+            <h1 data-i18n="header.title">今天，市场在为什么付钱？</h1>
           </div>
           <div class="top-actions">
-            <button class="button ghost" id="licenseButton" type="button">商业授权</button>
-            <button class="button ghost" id="demoButton" type="button">载入演示</button>
-            <a class="button ghost report-button" href="/api/report/latest.md">下载日报</a>
+            <button class="button ghost language-toggle" id="languageToggle" type="button">EN</button>
+            <button class="button ghost" id="licenseButton" type="button" data-i18n="button.license">商业授权</button>
+            <a class="button ghost" href="/commercial.html?intent=pro-waitlist" data-preserve-language data-i18n="button.pro">Pro 版</a>
+            <button class="button ghost" id="demoButton" type="button" data-i18n="button.demo">载入演示</button>
+            <a class="button ghost report-button" id="reportButton" href="/api/report/latest.md" data-i18n="button.report">下载日报</a>
             <button class="button primary" id="scanButton" type="button">
               <span class="button-icon">↻</span>
-              立即扫描
+              <span class="button-label" data-i18n="button.scan">立即扫描</span>
             </button>
           </div>
         </header>
@@ -54,14 +56,14 @@
         <section class="hero" id="overview">
           <div class="hero-copy">
             <div class="status-line">
-              <span class="status-pill" id="systemStatus">正在连接</span>
-              <span id="lastRunText">读取上次扫描状态…</span>
+              <span class="status-pill" id="systemStatus" data-i18n="hero.connecting">正在连接</span>
+              <span id="lastRunText" data-i18n="hero.loadingLastRun">读取上次扫描状态…</span>
             </div>
-            <h2 id="executiveSummary">系统正在读取公开市场证据并生成 CEO 结论。</h2>
-            <p>不是新闻聚合。只保留能转化为产品、服务、报价和销售动作的证据。</p>
+            <h2 id="executiveSummary" data-i18n="hero.defaultSummary">系统正在读取公开市场证据并生成 CEO 结论。</h2>
+            <p data-i18n="hero.description">不是新闻聚合。只保留能转化为产品、服务、报价和销售动作的证据。</p>
           </div>
           <div class="hero-score">
-            <span>TOP SIGNAL</span>
+            <span data-i18n="hero.topSignal">最高信号</span>
             <strong id="topScore">--</strong>
             <small>/ 100</small>
           </div>
@@ -69,32 +71,32 @@
 
         <section class="metrics" aria-label="核心指标">
           <article class="metric-card">
-            <span>累计公开证据</span>
+            <span data-i18n="metric.evidence">累计公开证据</span>
             <strong id="evidenceMetric">0</strong>
-            <small>已去重并持久保存</small>
+            <small data-i18n="metric.evidenceHelp">已去重并持久保存</small>
           </article>
           <article class="metric-card">
-            <span>商业机会</span>
+            <span data-i18n="metric.opportunities">商业机会</span>
             <strong id="opportunityMetric">0</strong>
-            <small>按证据强度排序</small>
+            <small data-i18n="metric.opportunitiesHelp">按证据强度排序</small>
           </article>
           <article class="metric-card">
-            <span>覆盖来源</span>
+            <span data-i18n="metric.sources">覆盖来源</span>
             <strong id="sourceMetric">0</strong>
-            <small>Reddit · HN · GitHub</small>
+            <small data-i18n="metric.sourcesHelp">Reddit · HN · GitHub</small>
           </article>
           <article class="metric-card">
-            <span>扫描次数</span>
+            <span data-i18n="metric.runs">扫描次数</span>
             <strong id="runMetric">0</strong>
-            <small>自动与手动运行审计</small>
+            <small data-i18n="metric.runsHelp">自动与手动运行审计</small>
           </article>
         </section>
 
         <section class="section" id="opportunities">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">DECISION QUEUE</p>
-              <h3>机会优先级</h3>
+              <p class="eyebrow" data-i18n="section.decisionQueue">决策队列</p>
+              <h3 data-i18n="section.opportunities">机会优先级</h3>
             </div>
             <div class="legend">
               <span><i class="legend-dot build"></i>BUILD</span>
@@ -103,7 +105,7 @@
             </div>
           </div>
           <div class="opportunity-grid" id="opportunityGrid">
-            <div class="empty-state">尚无机会数据，首次自动扫描完成后会在这里显示。</div>
+            <div class="empty-state" data-i18n="empty.opportunities">尚无机会数据，首次自动扫描完成后会在这里显示。</div>
           </div>
         </section>
 
@@ -111,52 +113,53 @@
           <div class="section panel" id="evidence">
             <div class="section-heading compact">
               <div>
-                <p class="eyebrow">EVIDENCE STREAM</p>
-                <h3>高价值证据</h3>
+                <p class="eyebrow" data-i18n="section.evidenceStream">证据流</p>
+                <h3 data-i18n="section.highValueEvidence">高价值证据</h3>
               </div>
-              <button class="text-button" id="refreshButton" type="button">刷新</button>
+              <button class="text-button" id="refreshButton" type="button" data-i18n="button.refresh">刷新</button>
             </div>
             <div class="evidence-list" id="evidenceList">
-              <div class="empty-state">暂无证据。</div>
+              <div class="empty-state" data-i18n="empty.evidence">暂无证据。</div>
             </div>
           </div>
 
           <div class="section panel" id="operations">
             <div class="section-heading compact">
               <div>
-                <p class="eyebrow">OPERATIONS</p>
-                <h3>来源与调度</h3>
+                <p class="eyebrow" data-i18n="section.operations">运行中心</p>
+                <h3 data-i18n="section.sourcesSchedule">来源与调度</h3>
               </div>
             </div>
             <div class="source-list" id="sourceList"></div>
             <div class="schedule-card">
-              <span>下一次自动扫描</span>
-              <strong id="nextRunText">未启用</strong>
-              <small id="scheduleText">读取配置中…</small>
+              <span data-i18n="schedule.next">下一次自动扫描</span>
+              <strong id="nextRunText" data-i18n="schedule.disabled">未启用</strong>
+              <small id="scheduleText" data-i18n="schedule.loading">读取配置中…</small>
             </div>
             <div class="run-history" id="runHistory"></div>
           </div>
         </section>
 
         <footer>
-          <span>BossAI Radar Lite v0.2.0</span>
-          <span>源码开放 · 非商业许可 · 商业使用需授权</span>
+          <span data-i18n="footer.version">BossAI Radar Lite v0.3.0</span>
+          <span data-i18n="footer.license">源码开放 · 非商业许可 · 商业使用需授权</span>
         </footer>
       </main>
     </div>
 
     <dialog class="license-dialog" id="licenseDialog">
       <form method="dialog" class="license-card">
-        <button class="dialog-close" value="close" aria-label="关闭">×</button>
-        <p class="eyebrow">COMMERCIAL LICENSE</p>
-        <h3>商业使用必须单独授权</h3>
-        <p class="license-intro">Lite 版源码可用于个人学习、研究和非商业评估。以下场景不在免费许可范围内。</p>
+        <button class="dialog-close" value="close" data-i18n-aria-label="common.close" aria-label="关闭">×</button>
+        <p class="eyebrow" data-i18n="license.eyebrow">商业许可</p>
+        <h3 data-i18n="license.title">商业使用必须单独授权</h3>
+        <p class="license-intro" data-i18n="license.intro">Lite 版源码可用于个人学习、研究和非商业评估。以下场景不在免费许可范围内。</p>
         <div class="license-grid">
-          <div><strong>需要授权</strong><span>SaaS 收费、咨询交付、付费课程打包、企业经营使用、白标部署、二次销售。</span></div>
-          <div><strong>商业版可提供</strong><span>更多情报源、团队权限、消息推送、行业模板、CRM、托管部署和商业支持。</span></div>
+          <div><strong data-i18n="license.requiredTitle">需要授权</strong><span data-i18n="license.requiredBody">SaaS 收费、咨询交付、付费课程打包、企业经营使用、白标部署、二次销售。</span></div>
+          <div><strong data-i18n="license.proTitle">商业版可提供</strong><span data-i18n="license.proBody">更多情报源、团队权限、消息推送、行业模板、CRM、托管部署和商业支持。</span></div>
         </div>
-        <a class="button primary license-cta" id="licenseContact" href="#">联系获取商业授权</a>
-        <small>本项目是 source-available 非商业许可，不是 OSI 标准开源许可证。</small>
+        <a class="button primary license-cta" id="licenseContact" href="/commercial.html?intent=commercial" data-preserve-language data-i18n="license.apply">填写商业授权申请</a>
+        <a class="text-button license-pro-link" href="/commercial.html?intent=pro-waitlist" data-preserve-language data-i18n="license.waitlist">加入 BossAI Radar Pro 等待名单</a>
+        <small data-i18n="license.note">本项目是 source-available 非商业许可，不是 OSI 标准开源许可证。</small>
       </form>
     </dialog>
 
