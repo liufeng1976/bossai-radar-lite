@@ -46,7 +46,7 @@ liufeng420594566@gmail.com
 ## Agent 自安装安全
 
 - 建议先运行 `--dry-run` 查看安装计划；
-- 对受控环境使用固定标签，例如 `github:liufeng1976/bossai-radar-lite#v0.7.0`；
+- 对受控环境使用固定标签，例如 `github:liufeng1976/bossai-radar-lite#v0.7.1`；
 - 自安装器只把管理员密钥写入 Radar 安装目录的 `.env`，不会打印或写入 Agent MCP 配置；
 - 默认关闭定时扫描、Agent 真实扫描和线索写入；
 - `--enable-scan` 与 `--enable-lead-write` 必须由用户明确授权；

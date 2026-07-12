@@ -448,7 +448,7 @@ npm run release:check
 
 ## 当前验证状态
 
-v0.7.0 发布门禁覆盖：
+v0.7.1 发布门禁覆盖：
 
 - 数据库、机会、线索和跟进生命周期；
 - 官方 MCP Client、9 个默认工具、2 个 Prompt 和可选写权限；
@@ -463,7 +463,7 @@ v0.7.0 发布门禁覆盖：
 - 前端 JavaScript、双语词典和 TypeScript 生产构建；
 - Windows ZIP、runtime tar.gz 与 SHA256 校验。
 
-详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.7.0.md](docs/RELEASE_NOTES_v0.7.0.md)。
+详细变更见 [CHANGELOG.md](CHANGELOG.md)，本版发布文案见 [docs/RELEASE_NOTES_v0.7.1.md](docs/RELEASE_NOTES_v0.7.1.md)。
 
 ## 免责声明
 

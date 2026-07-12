@@ -25,7 +25,7 @@ const includePaths = [
   "docs/FOLLOWUP_GUIDE_EN.md",
   "docs/AGENT_INTEGRATION.md",
   "docs/AGENT_INTEGRATION_EN.md",
-  "docs/RELEASE_NOTES_v0.7.0.md",
+  "docs/RELEASE_NOTES_v0.7.1.md",
   "integrations",
   "skills",
   "scripts/install-agent-skill.mjs",

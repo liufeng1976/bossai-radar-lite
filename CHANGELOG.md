@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.1 - 2026-07-12
+
+### Fixed
+
+- GitHub npx packages without package-lock.json now fall back from npm ci to npm install --ignore-scripts
+- Source installs keep the locked npm ci path when a lockfile exists
+- Prebuilt Release packages install production dependencies and reuse dist
+- CI builds before running self-install tests that depend on production artifacts
+
+### Validation
+
+- Clean-checkout release gate passed
+- Source and prebuilt-runtime installation modes passed
+- Existing Agent permission, MCP, Skill, service, and security tests remain active
+
 ## 0.7.0 - 2026-07-12
 
 ### Added

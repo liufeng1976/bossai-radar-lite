@@ -69,12 +69,12 @@ try {
   await installFiles();
   if (!skipDeps) {
     if (hasBuildSources(installDir)) {
-      runNpm(["ci", "--ignore-scripts", "--include=dev"], "Install dependencies");
+      runDependencyInstall("dev");
       runNpm(["run", "build"], "Build Radar Lite");
       summary.steps.push({ step: "build", status: "ok", mode: "source" });
     } else {
       requireFile(path.join(installDir, "dist", "src", "server.js"), "Neither build sources nor a production build are available.");
-      runNpm(["ci", "--ignore-scripts", "--omit=dev"], "Install runtime dependencies");
+      runDependencyInstall("prod");
       summary.steps.push({ step: "build", status: "ok", mode: "prebuilt-runtime" });
     }
   } else {
@@ -392,6 +392,16 @@ function requireCommand(command, message) {
 
 function commandSucceeds(command, args) {
   return runOptional(command, args).status === 0;
+}
+
+function runDependencyInstall(mode) {
+  const hasLock = existsSync(path.join(installDir, "package-lock.json"))
+    || existsSync(path.join(installDir, "npm-shrinkwrap.json"));
+  const args = hasLock
+    ? ["ci", "--ignore-scripts", mode === "dev" ? "--include=dev" : "--omit=dev", "--no-audit", "--no-fund"]
+    : ["install", "--ignore-scripts", mode === "dev" ? "--include=dev" : "--omit=dev", "--no-audit", "--no-fund"];
+  runNpm(args, mode === "dev" ? "Install dependencies" : "Install runtime dependencies");
+  summary.steps.push({ step: "dependencies", status: "ok", mode: hasLock ? "locked" : "npm-package-fallback" });
 }
 
 function runNpm(args, label) {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "bossai-radar-lite",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "repository": "https://github.com/liufeng1976/bossai-radar-lite",
   "license": "BossAI Radar Lite Non-Commercial License 1.0",
   "minimumNodeVersion": "22.5.0",
