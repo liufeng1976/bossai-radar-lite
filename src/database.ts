@@ -4,6 +4,10 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { ValidatedLeadInput } from "./leads.js";
 import type {
+  BossAiDelegation,
+  BossAiExecutionStatus,
+  BossAiReviewStatus,
+  DailyBrief,
   Lead,
   LeadActivity,
   LeadActivityType,
@@ -12,6 +16,7 @@ import type {
   LeadStats,
   LeadStatus,
   Opportunity,
+  RedditCommunityContext,
   Report,
   SavedEvidence,
   ScanRunSummary,
@@ -50,6 +55,8 @@ interface EvidenceRow {
   total_score: number;
   category: string;
   tags_json: string;
+  community: string;
+  source_context_json: string;
   is_demo: number;
   created_at: string;
 }
@@ -79,6 +86,9 @@ interface ReportRow {
   generated_at: string;
   executive_summary: string;
   markdown: string;
+  brief_json: string;
+  markdown_en: string | null;
+  brief_en_json: string;
 }
 
 interface LeadRow {
@@ -113,6 +123,22 @@ interface LeadActivityRow {
   type: LeadActivityType;
   content: string;
   created_at: string;
+}
+
+interface BossAiDelegationRow {
+  id: number;
+  source_type: "opportunity";
+  source_record_id: string;
+  source_operation_id: string;
+  bossai_run_id: string;
+  bossai_agent_id: string;
+  status: BossAiExecutionStatus;
+  review_status: BossAiReviewStatus;
+  submitted_at: string;
+  updated_at: string;
+  result_imported_at: string | null;
+  error_code: string;
+  error_message: string;
 }
 
 export class RadarDatabase {
@@ -158,6 +184,8 @@ export class RadarDatabase {
         total_score INTEGER NOT NULL,
         category TEXT NOT NULL,
         tags_json TEXT NOT NULL DEFAULT '[]',
+        community TEXT NOT NULL DEFAULT '',
+        source_context_json TEXT NOT NULL DEFAULT '{}',
         is_demo INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
       );
@@ -194,6 +222,9 @@ export class RadarDatabase {
         generated_at TEXT NOT NULL,
         executive_summary TEXT NOT NULL,
         markdown TEXT NOT NULL,
+        brief_json TEXT NOT NULL DEFAULT '{}',
+        markdown_en TEXT,
+        brief_en_json TEXT NOT NULL DEFAULT '{}',
         FOREIGN KEY(run_id) REFERENCES runs(id)
       );
 
@@ -231,6 +262,27 @@ export class RadarDatabase {
       CREATE INDEX IF NOT EXISTS idx_leads_follow_up ON leads(next_follow_up_at);
       CREATE INDEX IF NOT EXISTS idx_leads_contact ON leads(contact);
 
+      CREATE TABLE IF NOT EXISTS bossai_delegations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_type TEXT NOT NULL,
+        source_record_id TEXT NOT NULL,
+        source_operation_id TEXT NOT NULL UNIQUE,
+        bossai_run_id TEXT NOT NULL UNIQUE,
+        bossai_agent_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        review_status TEXT NOT NULL,
+        submitted_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        result_imported_at TEXT,
+        error_code TEXT NOT NULL DEFAULT '',
+        error_message TEXT NOT NULL DEFAULT ''
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bossai_delegations_source
+        ON bossai_delegations(source_type, source_record_id, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_bossai_delegations_status
+        ON bossai_delegations(status, review_status, updated_at DESC);
+
       CREATE TABLE IF NOT EXISTS lead_activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         lead_id TEXT NOT NULL,
@@ -242,11 +294,16 @@ export class RadarDatabase {
 
       CREATE INDEX IF NOT EXISTS idx_lead_activities_lead ON lead_activities(lead_id, created_at DESC);
     `);
+    this.ensureColumn("evidence", "community", "TEXT NOT NULL DEFAULT ''");
+    this.ensureColumn("evidence", "source_context_json", "TEXT NOT NULL DEFAULT '{}'");
     this.ensureColumn("evidence", "is_demo", "INTEGER NOT NULL DEFAULT 0");
     this.ensureColumn("opportunities", "is_demo", "INTEGER NOT NULL DEFAULT 0");
+    this.ensureColumn("reports", "brief_json", "TEXT NOT NULL DEFAULT '{}'");
+    this.ensureColumn("reports", "markdown_en", "TEXT");
+    this.ensureColumn("reports", "brief_en_json", "TEXT NOT NULL DEFAULT '{}'");
   }
 
-  private ensureColumn(table: "evidence" | "opportunities", column: string, definition: string): void {
+  private ensureColumn(table: "evidence" | "opportunities" | "reports", column: string, definition: string): void {
     const columns = this.db.prepare(`PRAGMA table_info(${table})`).all() as unknown as Array<{ name: string }>;
     if (columns.some((item) => item.name === column)) return;
     this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -299,12 +356,17 @@ export class RadarDatabase {
       INSERT INTO evidence (
         fingerprint, source, external_id, title, body, url, author, published_at, engagement,
         query_text, pain_score, payment_score, competition_score, urgency_score, total_score,
-        category, tags_json, is_demo, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        category, tags_json, community, source_context_json, is_demo, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(fingerprint) DO UPDATE SET
         engagement = MAX(evidence.engagement, excluded.engagement),
         total_score = MAX(evidence.total_score, excluded.total_score),
         tags_json = excluded.tags_json,
+        community = CASE WHEN excluded.community <> '' THEN excluded.community ELSE evidence.community END,
+        source_context_json = CASE
+          WHEN excluded.source_context_json LIKE '%\"status\":\"available\"%' THEN excluded.source_context_json
+          ELSE evidence.source_context_json
+        END,
         is_demo = excluded.is_demo
     `).run(
       item.fingerprint,
@@ -324,6 +386,8 @@ export class RadarDatabase {
       item.totalScore,
       item.category,
       JSON.stringify(item.tags),
+      item.community || "",
+      JSON.stringify(item.sourceContext ?? {}),
       item.isDemo ? 1 : 0,
       createdAt,
     );
@@ -368,18 +432,37 @@ export class RadarDatabase {
     }
   }
 
-  saveReport(runId: number, executiveSummary: string, markdown: string): Report {
+  saveReport(
+    runId: number,
+    executiveSummary: string,
+    markdown: string,
+    brief: DailyBrief | null = null,
+    markdownEnglish: string | null = null,
+    briefEnglish: DailyBrief | null = null,
+  ): Report {
     const generatedAt = new Date().toISOString();
     const result = this.db.prepare(`
-      INSERT INTO reports (run_id, generated_at, executive_summary, markdown)
-      VALUES (?, ?, ?, ?)
-    `).run(runId, generatedAt, executiveSummary, markdown);
+      INSERT INTO reports (
+        run_id, generated_at, executive_summary, markdown, brief_json, markdown_en, brief_en_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      runId,
+      generatedAt,
+      executiveSummary,
+      markdown,
+      JSON.stringify(brief ?? {}),
+      markdownEnglish,
+      JSON.stringify(briefEnglish ?? {}),
+    );
     return {
       id: Number(result.lastInsertRowid),
       runId,
       generatedAt,
       executiveSummary,
       markdown,
+      brief,
+      markdownEnglish,
+      briefEnglish,
     };
   }
 
@@ -388,6 +471,102 @@ export class RadarDatabase {
       .prepare("SELECT * FROM opportunities ORDER BY score DESC, evidence_count DESC LIMIT ?")
       .all(Math.max(1, Math.min(200, limit))) as unknown as OpportunityRow[];
     return rows.map((row) => this.mapOpportunity(row));
+  }
+
+  getOpportunity(id: string): Opportunity | null {
+    const row = this.db.prepare("SELECT * FROM opportunities WHERE id = ?").get(id) as unknown as OpportunityRow | undefined;
+    return row ? this.mapOpportunity(row) : null;
+  }
+
+  saveBossAiDelegation(input: {
+    sourceType: "opportunity";
+    sourceRecordId: string;
+    sourceOperationId: string;
+    bossaiRunId: string;
+    bossaiAgentId: string;
+    status: BossAiExecutionStatus;
+    reviewStatus: BossAiReviewStatus;
+    submittedAt: string;
+    updatedAt: string;
+    errorCode?: string;
+    errorMessage?: string;
+  }): BossAiDelegation {
+    this.db.prepare(`
+      INSERT INTO bossai_delegations (
+        source_type, source_record_id, source_operation_id, bossai_run_id, bossai_agent_id,
+        status, review_status, submitted_at, updated_at, error_code, error_message
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(source_operation_id) DO UPDATE SET
+        bossai_run_id = excluded.bossai_run_id,
+        bossai_agent_id = excluded.bossai_agent_id,
+        status = excluded.status,
+        review_status = excluded.review_status,
+        updated_at = excluded.updated_at,
+        error_code = excluded.error_code,
+        error_message = excluded.error_message
+    `).run(
+      input.sourceType,
+      input.sourceRecordId,
+      input.sourceOperationId,
+      input.bossaiRunId,
+      input.bossaiAgentId,
+      input.status,
+      input.reviewStatus,
+      input.submittedAt,
+      input.updatedAt,
+      input.errorCode ?? "",
+      input.errorMessage ?? "",
+    );
+    const row = this.db.prepare("SELECT * FROM bossai_delegations WHERE source_operation_id = ?")
+      .get(input.sourceOperationId) as unknown as BossAiDelegationRow;
+    return this.mapBossAiDelegation(row);
+  }
+
+  getBossAiDelegationByOperation(sourceOperationId: string): BossAiDelegation | null {
+    const row = this.db.prepare("SELECT * FROM bossai_delegations WHERE source_operation_id = ?")
+      .get(sourceOperationId) as unknown as BossAiDelegationRow | undefined;
+    return row ? this.mapBossAiDelegation(row) : null;
+  }
+
+  getBossAiDelegationByRunId(runId: string): BossAiDelegation | null {
+    const row = this.db.prepare("SELECT * FROM bossai_delegations WHERE bossai_run_id = ?")
+      .get(runId) as unknown as BossAiDelegationRow | undefined;
+    return row ? this.mapBossAiDelegation(row) : null;
+  }
+
+  listBossAiDelegations(limit = 50): BossAiDelegation[] {
+    const rows = this.db.prepare("SELECT * FROM bossai_delegations ORDER BY updated_at DESC LIMIT ?")
+      .all(Math.max(1, Math.min(200, limit))) as unknown as BossAiDelegationRow[];
+    return rows.map((row) => this.mapBossAiDelegation(row));
+  }
+
+  updateBossAiDelegationState(
+    runId: string,
+    state: {
+      status: BossAiExecutionStatus;
+      reviewStatus: BossAiReviewStatus;
+      updatedAt: string;
+      resultImportedAt?: string | null;
+      errorCode?: string;
+      errorMessage?: string;
+    },
+  ): BossAiDelegation | null {
+    this.db.prepare(`
+      UPDATE bossai_delegations
+      SET status = ?, review_status = ?, updated_at = ?,
+          result_imported_at = COALESCE(?, result_imported_at),
+          error_code = ?, error_message = ?
+      WHERE bossai_run_id = ?
+    `).run(
+      state.status,
+      state.reviewStatus,
+      state.updatedAt,
+      state.resultImportedAt ?? null,
+      state.errorCode ?? "",
+      state.errorMessage ?? "",
+      runId,
+    );
+    return this.getBossAiDelegationByRunId(runId);
   }
 
   listEvidence(limit = 100, category?: string, includeDemo = true): SavedEvidence[] {
@@ -706,6 +885,24 @@ export class RadarDatabase {
     };
   }
 
+  private mapBossAiDelegation(row: BossAiDelegationRow): BossAiDelegation {
+    return {
+      id: row.id,
+      sourceType: row.source_type,
+      sourceRecordId: row.source_record_id,
+      sourceOperationId: row.source_operation_id,
+      bossaiRunId: row.bossai_run_id,
+      bossaiAgentId: row.bossai_agent_id,
+      status: row.status,
+      reviewStatus: row.review_status,
+      submittedAt: row.submitted_at,
+      updatedAt: row.updated_at,
+      resultImportedAt: row.result_imported_at,
+      errorCode: row.error_code,
+      errorMessage: row.error_message,
+    };
+  }
+
   private mapRun(row: RunRow): ScanRunSummary {
     return {
       id: row.id,
@@ -721,6 +918,8 @@ export class RadarDatabase {
   }
 
   private mapEvidence(row: EvidenceRow): SavedEvidence {
+    const sourceContext = safeJson<RedditCommunityContext | Record<string, never>>(row.source_context_json, {});
+    const hasSourceContext = "schema" in sourceContext && sourceContext.schema === "bossai.reddit-community-context.v1";
     return {
       id: row.id,
       fingerprint: row.fingerprint,
@@ -733,6 +932,8 @@ export class RadarDatabase {
       publishedAt: row.published_at,
       engagement: row.engagement,
       query: row.query_text,
+      ...(row.community ? { community: row.community } : {}),
+      ...(hasSourceContext ? { sourceContext: sourceContext as RedditCommunityContext } : {}),
       painScore: row.pain_score,
       paymentScore: row.payment_score,
       competitionScore: row.competition_score,
@@ -773,8 +974,18 @@ export class RadarDatabase {
       generatedAt: row.generated_at,
       executiveSummary: row.executive_summary,
       markdown: row.markdown,
+      brief: briefFromJson(row.brief_json),
+      markdownEnglish: row.markdown_en,
+      briefEnglish: briefFromJson(row.brief_en_json),
     };
   }
+}
+
+function briefFromJson(value: string): DailyBrief | null {
+  const parsed = safeJson<DailyBrief | Record<string, never>>(value, {});
+  return "counts" in parsed && "mustRead" in parsed && "quickScan" in parsed
+    ? parsed as DailyBrief
+    : null;
 }
 
 function safeJson<T>(value: string, fallback: T): T {

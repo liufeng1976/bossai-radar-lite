@@ -20,10 +20,11 @@
 
         <nav class="nav">
           <a class="nav-item active" href="#overview"><span>01</span><b data-i18n="nav.overview">CEO 总览</b></a>
-          <a class="nav-item" href="#opportunities"><span>02</span><b data-i18n="nav.opportunities">机会优先级</b></a>
-          <a class="nav-item" href="#evidence"><span>03</span><b data-i18n="nav.evidence">证据库</b></a>
-          <a class="nav-item" href="#operations"><span>04</span><b data-i18n="nav.operations">运行状态</b></a>
-          <a class="nav-item" id="leadNavItem" href="/leads.html" data-preserve-language><span>05</span><b data-i18n="nav.leads">商业线索</b></a>
+          <a class="nav-item" href="#daily-brief"><span>02</span><b data-i18n="nav.brief">今日简报</b></a>
+          <a class="nav-item" href="#opportunities"><span>03</span><b data-i18n="nav.opportunities">机会优先级</b></a>
+          <a class="nav-item" href="#evidence"><span>04</span><b data-i18n="nav.evidence">证据库</b></a>
+          <a class="nav-item" href="#operations"><span>05</span><b data-i18n="nav.operations">运行状态</b></a>
+          <a class="nav-item" id="leadNavItem" href="/leads.html" data-preserve-language><span>06</span><b data-i18n="nav.leads">商业线索</b></a>
         </nav>
 
         <div class="sidebar-note">
@@ -92,6 +93,63 @@
             <strong id="runMetric">0</strong>
             <small data-i18n="metric.runsHelp">自动与手动运行审计</small>
           </article>
+        </section>
+
+        <section class="section brief-section" id="daily-brief" aria-labelledby="briefTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="section.intelligenceBrief">情报分级</p>
+              <h3 id="briefTitle" data-i18n="section.dailyBrief">今日情报简报</h3>
+            </div>
+            <span class="brief-generated" id="briefGeneratedAt" data-i18n="brief.waiting">等待首次扫描</span>
+          </div>
+          <div class="brief-tier-metrics" aria-label="情报分级数量" data-i18n-aria-label="brief.tierCountsLabel">
+            <article class="brief-tier-count must-read">
+              <span data-i18n="brief.mustRead">必读</span>
+              <strong id="mustReadMetric">0</strong>
+              <small data-i18n="brief.mustReadHelp">强痛点、付费或紧急信号</small>
+            </article>
+            <article class="brief-tier-count quick-scan">
+              <span data-i18n="brief.quickScan">速览</span>
+              <strong id="quickScanMetric">0</strong>
+              <small data-i18n="brief.quickScanHelp">值得了解的辅助证据</small>
+            </article>
+            <article class="brief-tier-count skip">
+              <span data-i18n="brief.skip">可跳过</span>
+              <strong id="skipMetric">0</strong>
+              <small data-i18n="brief.skipHelp">弱信号或重复信息</small>
+            </article>
+          </div>
+          <div class="brief-layout">
+            <div class="brief-streams">
+              <article class="brief-panel">
+                <div class="brief-panel-heading">
+                  <span class="brief-tier-label must-read" data-i18n="brief.mustRead">必读</span>
+                  <small data-i18n="brief.mustReadDescription">优先阅读并转化为决策</small>
+                </div>
+                <div class="brief-list" id="mustReadList">
+                  <div class="empty-state compact-empty" data-i18n="brief.emptyMustRead">暂无必读情报。</div>
+                </div>
+              </article>
+              <article class="brief-panel">
+                <div class="brief-panel-heading">
+                  <span class="brief-tier-label quick-scan" data-i18n="brief.quickScan">速览</span>
+                  <small data-i18n="brief.quickScanDescription">快速扫读，保留市场上下文</small>
+                </div>
+                <div class="brief-list" id="quickScanList">
+                  <div class="empty-state compact-empty" data-i18n="brief.emptyQuickScan">暂无速览情报。</div>
+                </div>
+              </article>
+            </div>
+            <aside class="content-ideas" aria-labelledby="contentIdeasTitle">
+              <p class="eyebrow" data-i18n="brief.contentEyebrow">内容转化</p>
+              <h4 id="contentIdeasTitle" data-i18n="brief.contentIdeas">可直接使用的内容选题</h4>
+              <p class="content-ideas-intro" data-i18n="brief.contentIdeasHelp">把高价值信号转成判断型内容。</p>
+              <ol id="contentIdeasList">
+                <li class="brief-empty" data-i18n="brief.emptyIdeas">扫描完成后在这里生成选题。</li>
+              </ol>
+            </aside>
+          </div>
         </section>
 
         <section class="section" id="opportunities">

@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Three-tier intelligence brief: MUST_READ, QUICK_SCAN, and SKIP
+- Deterministic content-topic suggestions generated from high-value evidence and opportunity decisions
+- ArXiv Atom collector with configurable categories
+- Configurable RSS/Atom collector supporting up to 30 public feeds
+- Dedicated brief classification and Markdown rendering tests
+
+### Changed
+
+- Chinese and English daily reports now combine intelligence triage, content ideas, and commercial opportunity validation
+- Structured Chinese and English briefs are persisted with each report for dashboard and Agent reuse
+- Portable, OpenClaw, and Hermes Skills now instruct Agents to present must-read findings first and preserve source links
+- Public documentation now positions Radar Lite as an installable Agent intelligence Skill
+
+### Fixed
+
+- Optional skipped RSS configuration no longer downgrades an otherwise successful scan to partial
+- Demo reports now classify their scored evidence instead of showing empty brief counts
+- RSS partial failures remain visible without discarding successful feed items
+- ArXiv and RSS entries now respect the configured lookback window
+
+### Security
+
+- RSS requests reject private, loopback, link-local, credential-bearing, non-HTTP, unsafe redirect, and oversized targets
+- Non-loopback server bindings now require a non-default administrator key of at least 24 characters
+
 ## 0.7.1 - 2026-07-12
 
 ### Fixed

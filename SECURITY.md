@@ -43,6 +43,8 @@ liufeng420594566@gmail.com
 13. 只从本仓库或经过人工审查的来源安装 Skill，不执行第三方 Skill 中的下载管道、混淆命令或未知脚本；
 14. 不把 `RADAR_ADMIN_API_KEY` 直接写入公开 Agent 配置、聊天记录或 Skill 文本。
 
+服务绑定到非回环地址时会拒绝默认值或少于 24 字符的 `RADAR_ADMIN_API_KEY`。这是一道最低启动门禁，不能替代 HTTPS、反向代理和网络访问控制。
+
 ## Agent 自安装安全
 
 - 建议先运行 `--dry-run` 查看安装计划；

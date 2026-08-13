@@ -27,6 +27,17 @@ test("demo seed is clearly marked and excluded from live evidence queries", () =
     assert.equal(stats.demoEvidence, 9);
     assert.equal(stats.demoOpportunities, result.opportunities.length);
     assert.match(db.latestReport()?.executiveSummary || "", /^【演示数据】/);
+    assert.deepEqual(result.brief.counts, { MUST_READ: 8, QUICK_SCAN: 1, SKIP: 0 });
+    assert.equal(result.brief.mustRead.length, 8);
+    assert.equal(result.brief.quickScan.length, 1);
+    assert.ok(result.brief.contentIdeas.length > 0);
+    assert.match(result.report.markdown, /^# BossAI Radar Lite 演示日报/);
+    assert.match(result.report.markdown, /演示声明/);
+    assert.match(result.report.markdown, /必读：8 条/);
+    assert.match(result.report.markdown, /速览：1 条/);
+    assert.match(result.report.markdown, /可跳过：0 条/);
+    assert.match(result.report.markdown, /可直接转化的内容选题/);
+    assert.match(result.report.markdown, /https:\/\/example\.com\/bossai-radar-demo\/support-2/);
 
     db.saveEvidence(scoreEvidence({
       source: "github",

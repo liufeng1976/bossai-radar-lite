@@ -1,4 +1,11 @@
-import type { Opportunity, SavedEvidence, ScanRunSummary, SourceOutcome } from "./types.js";
+import { buildDailyBrief, renderDailyBriefMarkdown } from "./brief.js";
+import type { DailyBrief, Opportunity, ScanRunSummary, ScoredEvidence, SourceOutcome } from "./types.js";
+
+export interface GeneratedReport {
+  executiveSummary: string;
+  markdown: string;
+  brief: DailyBrief;
+}
 
 export function createReport(
   runId: number,
@@ -6,13 +13,16 @@ export function createReport(
   sourceOutcomes: SourceOutcome[],
   collectedCount: number,
   evidenceCount: number,
-): { executiveSummary: string; markdown: string } {
+  scoredEvidence: ScoredEvidence[] = [],
+): GeneratedReport {
   const generatedAt = new Date();
+  const brief = buildDailyBrief(scoredEvidence, opportunities);
+  const briefMarkdown = renderDailyBriefMarkdown(brief);
   const actionable = opportunities.filter((item) => item.decision === "BUILD" || item.decision === "SELL_SERVICE");
   const top = opportunities[0];
   const executiveSummary = top
-    ? `本轮采集 ${collectedCount} 条公开信息，沉淀 ${evidenceCount} 条证据，形成 ${opportunities.length} 个机会。当前最高优先级是“${top.title}”（${top.score}分，${top.decision}）。`
-    : `本轮采集 ${collectedCount} 条公开信息，尚未形成达到观察门槛的商业机会。`;
+    ? `本轮采集 ${collectedCount} 条公开信息，其中必读 ${brief.counts.MUST_READ} 条、速览 ${brief.counts.QUICK_SCAN} 条，沉淀 ${evidenceCount} 条证据，形成 ${opportunities.length} 个机会。当前最高优先级是“${top.title}”（${top.score}分，${top.decision}）。`
+    : `本轮采集 ${collectedCount} 条公开信息，其中必读 ${brief.counts.MUST_READ} 条、速览 ${brief.counts.QUICK_SCAN} 条，尚未形成达到观察门槛的商业机会。`;
 
   const sourceTable = sourceOutcomes
     .map((source) => `| ${source.source} | ${source.status} | ${source.items.length} | ${source.durationMs}ms | ${escapeCell(source.error || "-")} |`)
@@ -40,7 +50,7 @@ ${item.mvpPlan.map((step) => `- ${step}`).join("\n")}
     .map((item) => `- ${item.title}：${item.score}分，证据不足，暂不投入。`)
     .join("\n");
 
-  const markdown = `# BossAI Radar Lite 商业机会日报
+  const markdown = `# BossAI Radar Lite 情报与商业机会日报
 
 > 扫描编号：#${runId}  
 > 生成时间：${formatDate(generatedAt)}  
@@ -55,6 +65,8 @@ ${executiveSummary}
 - SELL_SERVICE：${opportunities.filter((item) => item.decision === "SELL_SERVICE").length} 个
 - WATCH：${opportunities.filter((item) => item.decision === "WATCH").length} 个
 - IGNORE：${opportunities.filter((item) => item.decision === "IGNORE").length} 个
+
+${briefMarkdown}
 
 ## 来源运行情况
 
@@ -75,22 +87,28 @@ ${noAction || "- 暂无额外放弃项。"}
 本报告来自公开信息自动采集与确定性评分。AI 只负责解释证据，不负责篡改机会分数和决策门槛。任何收入、预算和市场规模结论都应回到原始链接人工核验。
 `;
 
-  return { executiveSummary, markdown };
+  return { executiveSummary, markdown, brief };
 }
 
 export function createEnglishReport(
   run: ScanRunSummary,
   opportunities: Opportunity[],
-  evidence: SavedEvidence[],
-): { executiveSummary: string; markdown: string } {
+  evidence: ScoredEvidence[],
+): GeneratedReport {
   const generatedAt = new Date();
+  const brief = buildDailyBrief(evidence, opportunities, {
+    language: "en",
+    localizeEvidenceTitle: englishEvidenceTitle,
+    localizeOpportunityTitle: (item) => englishOpportunity(item).title,
+  });
+  const briefMarkdown = renderDailyBriefMarkdown(brief, "en");
   const top = opportunities[0];
   const isDemo = run.trigger === "demo";
   const actionable = opportunities.filter((item) => item.decision === "BUILD" || item.decision === "SELL_SERVICE");
   const prefix = isDemo ? "Synthetic demo: " : "";
   const executiveSummary = top
-    ? `${prefix}${run.collectedCount} public items produced ${opportunities.length} opportunities. The current top priority is “${englishOpportunity(top).title}” (${top.score}/100, ${top.decision}).`
-    : `${prefix}${run.collectedCount} public items were collected, but no opportunity reached the watch threshold.`;
+    ? `${prefix}${run.collectedCount} public items included ${brief.counts.MUST_READ} MUST_READ and ${brief.counts.QUICK_SCAN} QUICK_SCAN items, producing ${opportunities.length} opportunities. The current top priority is “${englishOpportunity(top).title}” (${top.score}/100, ${top.decision}).`
+    : `${prefix}${run.collectedCount} public items included ${brief.counts.MUST_READ} MUST_READ and ${brief.counts.QUICK_SCAN} QUICK_SCAN items, but no opportunity reached the watch threshold.`;
 
   const opportunitySections = opportunities.slice(0, 10).map((item, index) => {
     const localized = englishOpportunity(item);
@@ -112,7 +130,7 @@ ${localized.mvpPlan.map((step) => `- ${step}`).join("\n")}
   }).join("\n");
 
   const evidenceRows = evidence.slice(0, 15).map((item) =>
-    `| ${item.source} | ${escapeCell(englishEvidenceTitle(item))} | ${item.totalScore} | ${item.isDemo ? "DEMO" : "LIVE"} |`,
+    `| ${item.source} | ${escapeCell(englishEvidenceTitle(item))} | ${item.totalScore} | ${item.isDemo ? "DEMO" : "LIVE"} | ${markdownSourceLink(item.url, "Open source")} |`,
   ).join("\n");
 
   const noAction = opportunities
@@ -145,15 +163,17 @@ ${executiveSummary}
 - WATCH: ${opportunities.filter((item) => item.decision === "WATCH").length}
 - IGNORE: ${opportunities.filter((item) => item.decision === "IGNORE").length}
 
+${briefMarkdown}
+
 ## Opportunity Priority
 
 ${opportunitySections || "No opportunity reached the minimum evidence threshold in this run."}
 
 ## High-Value Evidence
 
-| Source | Evidence | Score | Type |
-|---|---|---:|---|
-${evidenceRows || "| - | No evidence | 0 | - |"}
+| Source | Evidence | Score | Type | Original |
+|---|---|---:|---|---|
+${evidenceRows || "| - | No evidence | 0 | - | - |"}
 
 ## Explicit Do-Not-Build List
 
@@ -164,10 +184,10 @@ ${noAction || "- No additional rejection item."}
 This report is generated from public evidence and deterministic scoring. AI may explain evidence, but it cannot override opportunity scores or decision gates. Revenue, budget, customer-count and market-size claims must be verified through the original source before business use.
 `;
 
-  return { executiveSummary, markdown };
+  return { executiveSummary, markdown, brief };
 }
 
-function englishEvidenceTitle(item: SavedEvidence): string {
+function englishEvidenceTitle(item: ScoredEvidence): string {
   if (!item.isDemo) return item.title;
   const titles: Record<string, string> = {
     "demo-support-1": "More than 200 Shopify after-sales messages a day; the team will pay for AI reply drafts",
@@ -309,4 +329,16 @@ function formatDate(date: Date): string {
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ").slice(0, 160);
+}
+
+function markdownSourceLink(value: string, label: string): string {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return `[${label}](<${value.replace(/>/g, "%3E")}>)`;
+    }
+  } catch {
+    // Keep an invalid source visible as text without creating an active link.
+  }
+  return escapeCell(value);
 }

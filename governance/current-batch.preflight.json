@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 3,
+  "batchId": "bossai-radar-intelligence-manager-plugin-v0.1.0-2026-08-05",
+  "projectId": "bossai-radar-lite",
+  "constitution": {
+    "version": "2026.08.04.2",
+    "sha256": "c87e3e1d89d6bfddc9a032847ca921cc5375f58353ed70aef4885fa112bbc825",
+    "rootKeyId": "bossai-constitution-root-2026-08-r4"
+  },
+  "highestCommercialGoal": "Let a boss turn a verified Radar opportunity into governed intelligence employee work without moving source evidence, deterministic scoring, leads or professional Radar operations into BossAI OS.",
+  "largestUserGap": "Radar Lite still delegated persistent work through obsolete built-in employee IDs and Workforce Run endpoints, while the planned independent Intelligence Agent did not exist as an installable restart-safe plugin.",
+  "userProblem": "The boss needs one trusted path from verified market evidence to a reviewable intelligence decision framework, with exact plugin readiness, mandatory approval and durable recovery, while Radar remains the evidence and scoring authority.",
+  "userVisibleChange": "A real non-Demo opportunity now checks the exact bossai-intelligence-agent installation and creates a BossAI Manager task. The dashboard continues to show safe execution and review states while unsigned, disabled, unhealthy or mismatched plugins fail before task creation.",
+  "scope": [
+    "Create the independent bossai-intelligence-agent@0.1.0 plugin",
+    "Declare collection-plan, evidence-review, opportunity-assessment, competitor-brief and daily-brief capabilities",
+    "Implement explicit Manager acceptance, mandatory approval, durable Effect Claim, Offer acknowledgement and plugin-private Storage",
+    "Validate approval while the plugin process is offline and restart recovery",
+    "Validate actual Digital Employee Center package discovery and unsigned enable rejection",
+    "Replace Radar active Agent Run and Workforce Run calls with bossai.manager-task.v1",
+    "Require exact plugin ID, version, signature, enabled state, health and Manager permissions before task creation",
+    "Keep source collection, SSRF protection, evidence, deterministic scoring, opportunity decisions, reports, leads and SQLite in Radar Lite",
+    "Keep Demo evidence blocked from real Manager tasks",
+    "Preserve bounded AI Feature calls through the BossAI OS compatibility Gateway"
+  ],
+  "outOfScope": [
+    "Creating a second crawler platform, Agent Runtime, scheduler, Gateway, Memory, Approval Engine, Audit system, event bus, points ledger or Billing system",
+    "Giving the plugin direct access to Radar SQLite, administrator keys, BossAI JWT, Provider credentials or source collectors",
+    "Allowing AI to change Radar pain, payment, competition, urgency, total scores or BUILD / SELL_SERVICE / WATCH / IGNORE thresholds",
+    "Starting real public-source scans, modifying leads, contacting customers or publishing reports",
+    "Creating or signing a production Agent package",
+    "Registering a formal AI Employee",
+    "Deploying, committing, pushing or packaging a commercial installer",
+    "Claiming production readiness, launch, real-user validation, GA or completion level above 2"
+  ],
+  "realEntryAcceptance": {
+    "entry": "Build and scan the Intelligence Agent package, delegate a verified non-Demo Radar opportunity through the real Radar server, stop the plugin while approval is pending, approve while offline, restart it and verify reviewable result delivery.",
+    "checkId": "real-entry:radar-intelligence-manager-plugin-v0.1.0",
+    "scenarios": [
+      "The actual plugin scanner discovers bossai-intelligence-agent@0.1.0",
+      "The unsigned package installs disabled and cannot be enabled",
+      "Radar rejects unsigned, disabled, unhealthy, mismatched or contract-incomplete installations before Manager task creation",
+      "Radar sends a bounded objective with deterministic score and decision facts to POST /api/manager/tasks",
+      "Manager routing selects only bossai-intelligence-agent",
+      "Manifest requiresHumanApproval elevates work to at least L2",
+      "The plugin explicitly accepts and reports no execution progress before approval",
+      "The plugin persists bounded pending context and acknowledges the original Offer",
+      "The plugin process stops while owner approval is pending",
+      "The owner approves while the plugin is offline",
+      "The restarted plugin restores pending context and reports 20, 65 and 90 percent progress",
+      "The result states no scan, no Radar mutation, no lead mutation, no customer contact and no publication",
+      "Radar stores only the Manager Task reference and safe last-known state",
+      "Demo opportunities remain blocked",
+      "Old built-in employee IDs, Agent Run and Workforce Run paths remain absent from active source"
+    ]
+  },
+  "productThinking": {
+    "userSuccess": {
+      "whyNeeded": "Market evidence is valuable only when the boss can turn it into a governed next decision without confusing AI explanation with source truth or deterministic scoring.",
+      "firstUseUnderstanding": "The user sees that Radar owns evidence and scores, while the Intelligence Agent prepares a reviewable decision framework through BossAI Manager.",
+      "nextAction": "Review the Manager result, then return to Radar Lite to collect missing evidence, inspect source records or act on the approved opportunity decision.",
+      "failureRecovery": "Radar remains usable when BossAI OS or the plugin is unavailable. Plugin readiness errors identify the exact recovery action, and accepted tasks survive offline approval and restart.",
+      "targetOutcome": "A verified opportunity enters a durable governed Intelligence Agent lifecycle without duplicate platform authority or fabricated evidence.",
+      "canCompleteGoal": true
+    },
+    "userJourney": {
+      "entry": "Open Radar Lite and inspect a real opportunity backed by public evidence.",
+      "valueUnderstanding": "Understand the deterministic score, decision, evidence count and the separate Intelligence Agent review action.",
+      "operation": "Submit a bounded objective from a non-Demo opportunity after the exact plugin readiness gate passes.",
+      "decision": "Approve or reject the Agent plan in BossAI Manager and keep the final business decision with the owner.",
+      "payment": "Commercial authorization remains outside Radar and is not altered by this technical batch.",
+      "result": "Read a reviewable evidence-gap, competition and opportunity decision framework without any claimed external action.",
+      "afterSales": "Use Radar source health, evidence records, Manager Audit and Support Bundle to diagnose missing or stale evidence.",
+      "repurchase": "Not applicable to this local technical batch; commercial licensing remains separately governed."
+    },
+    "pageDirection": {
+      "currentLocation": "Radar Lite opportunity card and employee delegation status.",
+      "nextAction": "Delegate, inspect status, approve in BossAI Manager or open the underlying evidence.",
+      "backPath": "Return to the opportunity list without losing local evidence or Manager references.",
+      "homePath": "Radar Lite remains the professional intelligence home; BossAI Manager remains the employee command home.",
+      "failureRecovery": "Show authentication, installation, version, signature, enabled, health and Manager-contract failures precisely without inventing progress."
+    },
+    "acceptancePlan": {
+      "technical": [
+        "Radar build and full tests pass",
+        "Frontend syntax and i18n checks pass",
+        "BossAI migration boundary verifier passes",
+        "Intelligence plugin unit, package, Runtime and Manager integration tests pass",
+        "BossAI OS active API, Web, typecheck, OpenAPI and architecture boundaries pass"
+      ],
+      "business": [
+        "Radar remains the only intelligence evidence and scoring authority",
+        "BossAI OS remains the only Agent Platform",
+        "An unsigned or unhealthy plugin cannot create real employee work",
+        "AI cannot override deterministic score or opportunity-decision thresholds",
+        "No external action is claimed without separate evidence and approval"
+      ],
+      "userExperience": [
+        "The user can distinguish Radar score, Agent explanation, approval state and final owner decision",
+        "Demo opportunities cannot be mistaken for real business work",
+        "Failure states provide a concrete next action",
+        "Restart does not lose an accepted task",
+        "Completed means reviewable result, not outreach or publication"
+      ]
+    },
+    "aiUserResult": {
+      "applicable": true,
+      "saves": "Reduces manual conversion of market signals into evidence gaps, competitive context and a decision-ready brief.",
+      "gains": "Provides one durable reviewable intelligence result tied to a verified Radar opportunity.",
+      "reducesDifficulty": "Separates source truth, deterministic scoring, AI explanation, approval and external action into clear governed stages."
+    },
+    "failureLearning": {
+      "knownFailures": [
+        "Collection intent containing the word source was initially misrouted as evidence review",
+        "Old Radar delegation selected built-in employee IDs and used obsolete Agent Run and Workforce Run endpoints",
+        "An unsigned plugin could otherwise be mistaken for ready employee capacity",
+        "AI explanation could be mistaken for a changed Radar score or decision",
+        "Demo evidence could be mistaken for real evidence",
+        "Holding an Offer open during approval could cause redelivery or dead-lettering",
+        "In-memory pending state would be lost after restart"
+      ],
+      "preventionRules": [
+        "Explicit collection verbs take precedence over generic source wording unless negated",
+        "Radar fixes delegation to bossai-intelligence-agent and rejects all other employee IDs",
+        "Active source verification rejects Agent Run, Workforce Run and old employee IDs",
+        "Exact version, verified signature, enabled status, healthy status and Manager permissions are required",
+        "Every result states that Radar scores and decision thresholds remain authoritative",
+        "Demo opportunities and Demo evidence remain blocked or labelled",
+        "The plugin acknowledges Offers after acceptance and persists pending state through Platform SDK Storage",
+        "Restart integration must recover from durable authorization events and plugin-private Storage"
+      ]
+    },
+    "productOwnerVeto": {
+      "owner": "CEO / BossAI Manager product owner",
+      "acknowledged": true
+    }
+  },
+  "targetCompletionLevel": 2,
+  "capabilityClassification": "ai_assistant",
+  "requiredMachineChecks": [
+    "constitution-integrity",
+    "product-thinking",
+    "agent-portfolio",
+    "merge-boundaries",
+    "ai-gateway-boundary",
+    "openapi",
+    "typecheck",
+    "radar-build",
+    "radar-tests",
+    "frontend-syntax",
+    "i18n",
+    "bossai-migration-boundary",
+    "intelligence-agent-manager-integration",
+    "real-entry:radar-intelligence-manager-plugin-v0.1.0"
+  ],
+  "policyAssertions": {
+    "usesBossAICentralGateway": true,
+    "createsSecondAgentRuntime": false,
+    "usesDemoDataAsReal": false,
+    "bypassesHumanApproval": false,
+    "performsUnapprovedExternalActions": false
+  },
+  "strategicSplit": {
+    "requested": false,
+    "ceoDecisionReference": "C:\\Users\\42059\\Projects\\Atlas\\Decisions\\DEC-0012.md"
+  },
+  "runtime": {
+    "platform": "bossai-os",
+    "harness": "hermes",
+    "profile": "bossaiworkforce",
+    "gateway": "customer-local-bossai-ai-execution-gateway"
+  }
+}

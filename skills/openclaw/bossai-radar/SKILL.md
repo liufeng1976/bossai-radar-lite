@@ -1,6 +1,6 @@
 ---
 name: bossai-radar
-description: "BossAI Radar: evidence-backed overseas opportunity discovery, commercial lead pipeline, and human-reviewed sales follow-up."
+description: "BossAI Radar: public intelligence triage, evidence-backed overseas opportunity discovery, and human-reviewed commercial follow-up."
 metadata:
   openclaw:
     homepage: https://github.com/liufeng1976/bossai-radar-lite
@@ -11,7 +11,7 @@ metadata:
 
 # BossAI Radar for OpenClaw
 
-Use this skill for overseas opportunity scans, opportunity evidence review, commercial lead triage, and daily follow-up preparation.
+Use this skill for public intelligence briefs, overseas opportunity scans, opportunity evidence review, commercial lead triage, and daily follow-up preparation.
 
 ## Startup check
 
@@ -39,6 +39,18 @@ node "$RADAR_LITE_HOME/dist/src/agent-cli.js" draft --lead-id <lead-id>
 ```
 
 Parse stdout as JSON and require `ok=true` before using `data`.
+
+## Daily intelligence workflow
+
+When the owner asks for today’s intelligence brief:
+
+1. Check health.
+2. Read `radar_latest_report` or run `report --lang zh`.
+3. Present MUST_READ first, then QUICK_SCAN.
+4. Summarize SKIP by count unless the owner asks for details.
+5. Preserve source links and distinguish source facts from Agent inference.
+6. Include the generated content ideas and adapt them to the owner’s audience.
+7. Run a fresh scan only when explicitly requested and `RADAR_MCP_ALLOW_SCAN=true` or `RADAR_SKILL_ALLOW_SCAN=true`.
 
 ## WeChat or messaging workflow
 
@@ -74,7 +86,7 @@ Never delete leads, expose keys, or mark a lead WON without explicit proof and o
 
 ## Evidence rules
 
-- Public posts are signals, not verified orders.
+- Public posts, papers, feeds, and discussions are signals, not verified orders or settled facts.
 - Preserve source links and absolute dates when available.
 - Keep Demo data clearly labeled.
 - Do not invent revenue, customers, budgets, or market size.

@@ -1,12 +1,20 @@
+import { BossAiOsClient } from "./bossai-os-client.js";
 import { config } from "./config.js";
 import { deterministicNarrative } from "./scoring.js";
 import type { AiOpportunityNarrative, Opportunity, SavedEvidence } from "./types.js";
+
+const bossAiOs = new BossAiOsClient({
+  baseUrl: config.bossAiOs.baseUrl,
+  apiKey: config.bossAiOs.apiKey,
+  model: config.bossAiOs.model,
+  timeoutMs: config.bossAiOs.timeoutMs,
+});
 
 export async function enrichOpportunity(
   opportunity: Opportunity,
   evidence: SavedEvidence[],
 ): Promise<Opportunity> {
-  if (!config.ai.apiKey || config.ai.provider !== "openai-compatible") return opportunity;
+  if (config.ai.provider !== "bossai-gateway" || !bossAiOs.featureConfigured()) return opportunity;
 
   const related = evidence
     .filter((item) => opportunity.evidenceIds.includes(item.id))
@@ -34,64 +42,44 @@ async function requestNarrative(
   opportunity: Opportunity,
   evidence: SavedEvidence[],
 ): Promise<AiOpportunityNarrative> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), config.ai.timeoutMs);
-  try {
-    const response = await fetch(`${config.ai.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.ai.apiKey}`,
-        "Content-Type": "application/json",
+  const content = await bossAiOs.chatCompletion({
+    temperature: 0.2,
+    responseFormat: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: [
+          "你是BossAI商业情报分析员。只根据提供的公开证据，输出严格JSON。",
+          "不得虚构收入、客户、预算或市场规模。不得修改系统给出的score和decision。",
+          "输出字段：title, summary, targetCustomer, problem, priceHint, mvpPlan。",
+          "mvpPlan必须是3到7条可执行中文步骤。summary必须明确说明证据强弱和下一步。",
+        ].join("\n"),
       },
-      body: JSON.stringify({
-        model: config.ai.model,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: [
-              "你是BossAI商业情报分析员。只根据提供的公开证据，输出严格JSON。",
-              "不得虚构收入、客户、预算或市场规模。不得修改系统给出的score和decision。",
-              "输出字段：title, summary, targetCustomer, problem, priceHint, mvpPlan。",
-              "mvpPlan必须是3到7条可执行中文步骤。summary必须明确说明证据强弱和下一步。",
-            ].join("\n"),
+      {
+        role: "user",
+        content: JSON.stringify({
+          authoritative: {
+            category: opportunity.category,
+            score: opportunity.score,
+            decision: opportunity.decision,
+            evidenceCount: opportunity.evidenceCount,
+            sourceCount: opportunity.sourceCount,
           },
-          {
-            role: "user",
-            content: JSON.stringify({
-              authoritative: {
-                category: opportunity.category,
-                score: opportunity.score,
-                decision: opportunity.decision,
-                evidenceCount: opportunity.evidenceCount,
-                sourceCount: opportunity.sourceCount,
-              },
-              evidence: evidence.map((item) => ({
-                source: item.source,
-                title: item.title,
-                body: item.body.slice(0, 900),
-                score: item.totalScore,
-                painScore: item.painScore,
-                paymentScore: item.paymentScore,
-                engagement: item.engagement,
-                url: item.url,
-              })),
-            }),
-          },
-        ],
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) throw new Error(`AI provider returned HTTP ${response.status}`);
-    const payload = (await response.json()) as ChatCompletionResponse;
-    const content = payload.choices?.[0]?.message?.content;
-    if (!content) throw new Error("AI provider returned no content");
-    return validateNarrative(parseJsonObject(content), opportunity, evidence);
-  } finally {
-    clearTimeout(timeout);
-  }
+          evidence: evidence.map((item) => ({
+            source: item.source,
+            title: item.title,
+            body: item.body.slice(0, 900),
+            score: item.totalScore,
+            painScore: item.painScore,
+            paymentScore: item.paymentScore,
+            engagement: item.engagement,
+            url: item.url,
+          })),
+        }),
+      },
+    ],
+  });
+  return validateNarrative(parseJsonObject(content), opportunity, evidence);
 }
 
 function validateNarrative(
@@ -133,8 +121,4 @@ function safeString(value: unknown, fallback: string, maxLength: number): string
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>;
 }

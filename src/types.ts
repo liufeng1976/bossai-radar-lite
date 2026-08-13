@@ -1,6 +1,32 @@
-export type SourceName = "reddit" | "hackernews" | "github";
+export type SourceName = "reddit" | "hackernews" | "github" | "arxiv" | "rss";
 export type Decision = "BUILD" | "SELL_SERVICE" | "WATCH" | "IGNORE";
+export type BriefTier = "MUST_READ" | "QUICK_SCAN" | "SKIP";
 export type ScanTrigger = "manual" | "startup" | "scheduled" | "demo";
+
+export interface RedditCommunityRule {
+  shortName: string;
+  description: string;
+}
+
+export interface RedditPinnedPost {
+  title: string;
+  url: string;
+}
+
+export interface RedditCommunityContext {
+  schema: "bossai.reddit-community-context.v1";
+  community: string;
+  status: "available" | "unavailable";
+  aboutStatus: "available" | "unavailable";
+  rulesStatus: "available" | "unavailable";
+  pinnedPostsStatus: "available" | "unavailable";
+  aboutUrl: string;
+  rulesUrl: string;
+  description: string;
+  rules: RedditCommunityRule[];
+  pinnedPosts: RedditPinnedPost[];
+  fetchedAt: string;
+}
 
 export interface RawItem {
   source: SourceName;
@@ -12,6 +38,8 @@ export interface RawItem {
   publishedAt: string;
   engagement: number;
   query: string;
+  community?: string;
+  sourceContext?: RedditCommunityContext;
   isDemo?: boolean;
 }
 
@@ -52,6 +80,20 @@ export interface Opportunity {
   createdAt: string;
 }
 
+export interface BriefItem extends ScoredEvidence {
+  tier: BriefTier;
+  reason: string;
+}
+
+export interface DailyBrief {
+  generatedAt: string;
+  mustRead: BriefItem[];
+  quickScan: BriefItem[];
+  skip: BriefItem[];
+  contentIdeas: string[];
+  counts: Record<BriefTier, number>;
+}
+
 export interface SourceOutcome {
   source: SourceName;
   status: "success" | "partial" | "failed" | "skipped";
@@ -78,6 +120,9 @@ export interface Report {
   generatedAt: string;
   executiveSummary: string;
   markdown: string;
+  brief: DailyBrief | null;
+  markdownEnglish: string | null;
+  briefEnglish: DailyBrief | null;
 }
 
 export interface AiOpportunityNarrative {
@@ -87,6 +132,25 @@ export interface AiOpportunityNarrative {
   problem: string;
   priceHint: string;
   mvpPlan: string[];
+}
+
+export type BossAiExecutionStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+export type BossAiReviewStatus = "not_required" | "pending" | "approved" | "rejected" | "changes_requested";
+
+export interface BossAiDelegation {
+  id: number;
+  sourceType: "opportunity";
+  sourceRecordId: string;
+  sourceOperationId: string;
+  bossaiRunId: string;
+  bossaiAgentId: string;
+  status: BossAiExecutionStatus;
+  reviewStatus: BossAiReviewStatus;
+  submittedAt: string;
+  updatedAt: string;
+  resultImportedAt: string | null;
+  errorCode: string;
+  errorMessage: string;
 }
 
 export type LeadIntent = "commercial" | "pro-waitlist" | "white-label" | "managed-service";

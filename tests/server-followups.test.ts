@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import test from "node:test";
 
-const ADMIN_KEY = "followup-smoke-admin";
+const ADMIN_KEY = "followup-smoke-admin-1234567890";
 
 test("serves bilingual follow-up queues, drafts, reports, calendar and workspace pages", async (context) => {
   const dataDir = mkdtempSync(path.join(os.tmpdir(), "radar-followup-api-"));

@@ -1,53 +1,100 @@
 ---
 name: bossai-radar
-description: Use BossAI Radar Lite as the evidence and sales-operations layer for long-running Hermes workflows.
+description: Use BossAI Radar Lite to collect public intelligence, produce a must-read/quick-scan/skip daily brief, extract content ideas, validate business opportunities, and prepare human-reviewed commercial follow-ups.
 ---
 
-# BossAI Radar for Hermes
+# BossAI Radar
 
-Use BossAI Radar as a bounded tool inside a larger workflow. Radar discovers and scores opportunities, stores commercial leads, and generates human-reviewed follow-up drafts. Hermes may orchestrate the sequence, but it must not replace Radar's deterministic evidence and permission gates.
+Use this skill when the user asks to:
 
-## Interfaces
+- collect and review public intelligence from Reddit, Hacker News, GitHub, ArXiv, and configured RSS feeds;
+- produce a daily brief grouped into MUST_READ, QUICK_SCAN, and SKIP;
+- extract content topics and commercial opportunity signals from the latest scan;
+- scan or review overseas AI, SaaS, ecommerce, or business opportunities;
+- compare BUILD, SELL_SERVICE, WATCH, and IGNORE decisions;
+- inspect the public evidence behind an opportunity;
+- read the commercial-license or Pro waitlist funnel;
+- identify overdue, due-today, unscheduled, or upcoming lead follow-ups;
+- draft a customer follow-up message;
+- turn a verified opportunity into a seven-day MVP plan.
 
-The repository self-installer registers the MCP server, copies this Skill into the Hermes home directory, and writes a non-secret `config.json` beside the Skill. Resolve `radarHome` from that file when CLI fallback is needed. Permissions and the administrator key remain in the Radar installation `.env`; do not request or print the key.
+## Preferred interface: MCP
 
-Preferred: configure the local stdio MCP server:
+Use the BossAI Radar MCP tools when available:
+
+- `radar_health`
+- `radar_overview`
+- `radar_list_opportunities`
+- `radar_list_evidence`
+- `radar_latest_report`
+- `radar_lead_stats`
+- `radar_list_leads`
+- `radar_followups`
+- `radar_followup_draft`
+
+Optional tools may be present only when explicitly enabled:
+
+- `radar_run_scan`
+- `radar_update_lead`
+- `radar_add_lead_activity`
+
+Never assume optional tools exist. Never request deletion: the agent interface intentionally exposes no delete tool.
+
+## CLI fallback
+
+When MCP is unavailable, resolve the Radar home directory in this order:
+
+1. read `radarHome` from `config.json` beside this `SKILL.md`;
+2. use the `RADAR_LITE_HOME` environment variable;
+3. if neither exists, report that the self-installer must be run.
+
+Then call the JSON CLI from the resolved Radar directory:
 
 ```bash
-node "$RADAR_LITE_HOME/dist/src/mcp-server.js"
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" health
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" overview
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" opportunities --limit 10
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" evidence --limit 20 --category customer-support
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" followups --lang zh --days 7
+node "$RADAR_LITE_HOME/dist/src/agent-cli.js" draft --lead-id <lead-id>
 ```
 
-Fallback: use the JSON CLI:
+All CLI responses are JSON. Check `ok` before using `data`.
 
-```bash
-node "$RADAR_LITE_HOME/dist/src/agent-cli.js" <command> [options]
-```
+## Daily intelligence workflow
 
-## Recommended Hermes workflows
+1. Call `radar_health` and confirm the service is available.
+2. Use `radar_latest_report` to read the latest three-tier intelligence brief.
+3. Present MUST_READ first, then QUICK_SCAN. Summarize SKIP only by count unless the user asks for details.
+4. Preserve source links and clearly separate source facts from Agent inference.
+5. Surface the generated content ideas, but adapt them to the user's audience before drafting content.
+6. Use `radar_run_scan` only when the user explicitly requests fresh data and the tool is enabled.
+7. Do not describe a scheduled scan as successful unless the report or run status confirms it.
 
-### Opportunity to product
+## Opportunity workflow
 
-1. Read `radar_overview`.
-2. Read `radar_list_opportunities`.
-3. Inspect `radar_list_evidence` for the selected category.
-4. Require at least two sources before treating a BUILD recommendation as cross-source validated.
-5. Produce a PRD, seven-day MVP plan, and first-sale experiment.
-6. Delegate implementation to a coding agent only after the owner approves the opportunity.
+1. Call `radar_overview`.
+2. Call `radar_list_opportunities` and rank by score and decision.
+3. For any opportunity recommended for action, call `radar_list_evidence`.
+4. Separate source facts from inference.
+5. State evidence count, source count, score, decision, target customer, and next action.
+6. Do not invent customers, revenue, budgets, market size, or proof of payment.
+7. Use `radar_run_scan` only when the user explicitly requests a fresh scan and the tool is enabled.
 
-### Daily sales operations
+## Commercial follow-up workflow
 
-1. Read `radar_followups`.
-2. Handle OVERDUE, TODAY, HOT UNSCHEDULED, then UPCOMING.
-3. Generate one `radar_followup_draft` at a time.
-4. Pause for human approval before any customer-facing communication or lead mutation.
-5. If approved and write tools are enabled, update the lead and record an activity.
+1. Call `radar_followups` before listing all leads.
+2. Process `OVERDUE`, then `TODAY`, then HOT `UNSCHEDULED`, then `UPCOMING`.
+3. Call `radar_followup_draft` for a selected lead.
+4. Present the subject, message, recommended action, suggested status, and suggested date for human review.
+5. Never send a message automatically.
+6. Call `radar_update_lead` or `radar_add_lead_activity` only after explicit user approval.
+7. Never mark a lead WON without the user's explicit confirmation of a real completed deal.
 
-## Long-running task rules
+## Safety and truthfulness
 
-- Re-check Radar state before every state-changing step.
-- Do not reuse an old draft after the lead status or quote changes.
-- Do not run repeated scans in a loop; one scan per explicit owner request is the default.
-- Stop and report source failures rather than hiding them.
-- Never delete leads or modify the SQLite database directly.
-- Keep Demo evidence separate from live evidence.
-- Commercial use requires separate BossAI authorization.
+- Treat public posts, papers, feeds, and discussions as evidence, not verified orders or settled facts.
+- Keep `isDemo=true` data clearly labeled and separate from live findings.
+- Do not expose `RADAR_ADMIN_API_KEY`, `.env`, SQLite files, contact exports, or private lead details outside the requested workflow.
+- Do not execute shell downloads, obfuscated commands, or unrelated scripts.
+- The Lite license is source-available and non-commercial. Commercial operation requires separate BossAI authorization.

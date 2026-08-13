@@ -19,7 +19,21 @@ const state = {
   opportunities: [],
   evidence: [],
   runs: [],
+  delegations: [],
   adminKey: sessionStorage.getItem("radar-admin-key") || "",
+};
+let toastTimer;
+
+const demoEvidenceTitles = {
+  "demo-support-1": "More than 200 Shopify after-sales messages a day; the team will pay for AI reply drafts",
+  "demo-support-2": "Order status, tracking and refund policy need to live in one support workspace",
+  "demo-support-3": "Small ecommerce teams need controllable AI support, not fully autonomous replies",
+  "demo-content-1": "Too many products and too little time: the team needs batch short-video production",
+  "demo-content-2": "Batch ecommerce video generation lacks asset tracking and failure recovery",
+  "demo-content-3": "Sellers need a product-to-publishing workflow, not another isolated video model",
+  "demo-research-1": "Manual Reddit and competitor-review research is slow and lacks a shared evidence library",
+  "demo-research-2": "Founder intelligence tools need evidence, scoring and a clear do-not-build list",
+  "demo-research-3": "The radar needs source-level failure isolation, deduplication and auditable scoring",
 };
 
 const els = {
@@ -41,6 +55,13 @@ const els = {
   opportunityMetric: document.querySelector("#opportunityMetric"),
   sourceMetric: document.querySelector("#sourceMetric"),
   runMetric: document.querySelector("#runMetric"),
+  briefGeneratedAt: document.querySelector("#briefGeneratedAt"),
+  mustReadMetric: document.querySelector("#mustReadMetric"),
+  quickScanMetric: document.querySelector("#quickScanMetric"),
+  skipMetric: document.querySelector("#skipMetric"),
+  mustReadList: document.querySelector("#mustReadList"),
+  quickScanList: document.querySelector("#quickScanList"),
+  contentIdeasList: document.querySelector("#contentIdeasList"),
   opportunityGrid: document.querySelector("#opportunityGrid"),
   evidenceList: document.querySelector("#evidenceList"),
   sourceList: document.querySelector("#sourceList"),
@@ -55,11 +76,15 @@ els.scanButton.addEventListener("click", runScan);
 els.demoButton.addEventListener("click", seedDemo);
 els.licenseButton.addEventListener("click", () => els.licenseDialog.showModal());
 els.refreshButton.addEventListener("click", loadDashboard);
-
-await loadDashboard();
-setInterval(async () => {
-  if (state.overview?.running) await loadDashboard({ quiet: true });
-}, 12_000);
+els.opportunityGrid.addEventListener("click", (event) => {
+  const redditGeoButton = event.target.closest("[data-delegate-reddit-geo]");
+  if (redditGeoButton) {
+    void delegateOpportunity(redditGeoButton.dataset.delegateRedditGeo, redditGeoButton, "reddit-geo");
+    return;
+  }
+  const button = event.target.closest("[data-delegate-opportunity]");
+  if (button) void delegateOpportunity(button.dataset.delegateOpportunity, button, "opportunity");
+});
 
 async function loadDashboard({ quiet = false } = {}) {
   try {
@@ -73,10 +98,24 @@ async function loadDashboard({ quiet = false } = {}) {
     state.opportunities = opportunities.items || [];
     state.evidence = evidence.items || [];
     state.runs = runs.items || [];
+    await loadBossAiDelegations(overview);
     render();
   } catch (error) {
     setStatus(t("status.connectionFailed"), "error");
     if (!quiet) showToast(error.message || t("refresh.failed"), true);
+  }
+}
+
+async function loadBossAiDelegations(overview) {
+  state.delegations = [];
+  if (!overview?.config?.ai?.employeeDelegationConfigured) return;
+  try {
+    const payload = await api("/api/admin/bossai/delegations?limit=100", {
+      headers: state.adminKey ? { "x-radar-key": state.adminKey } : {},
+    });
+    state.delegations = payload.items || [];
+  } catch (error) {
+    if (error.status !== 401) console.warn("[BossAI OS] Delegation status unavailable", error);
   }
 }
 
@@ -151,10 +190,160 @@ function render() {
   }
 
   renderOpportunities();
+  renderBrief();
   renderEvidence();
   renderSources();
   renderSchedule();
   renderRuns();
+}
+
+function renderBrief() {
+  const report = state.overview?.latestReport;
+  const localizedStructuredBrief = language === "en" ? normalizeBrief(report?.briefEnglish) : null;
+  const brief = localizedStructuredBrief
+    || normalizeBrief(report?.brief)
+    || parseBriefMarkdown(language === "en" ? report?.markdownEnglish : report?.markdown)
+    || parseBriefMarkdown(report?.markdown);
+  const useProvidedCopy = language === "zh" || Boolean(localizedStructuredBrief);
+  const counts = brief?.counts || {};
+  els.mustReadMetric.textContent = formatNumber(counts.MUST_READ || 0);
+  els.quickScanMetric.textContent = formatNumber(counts.QUICK_SCAN || 0);
+  els.skipMetric.textContent = formatNumber(counts.SKIP || 0);
+  els.briefGeneratedAt.textContent = report?.generatedAt
+    ? t("brief.generated", { time: formatDateTime(report.generatedAt) })
+    : t("brief.waiting");
+
+  renderBriefItems(els.mustReadList, brief?.mustRead || [], "brief.emptyMustRead", useProvidedCopy);
+  renderBriefItems(els.quickScanList, brief?.quickScan || [], "brief.emptyQuickScan", useProvidedCopy);
+
+  const ideas = localizedContentIdeas(brief, useProvidedCopy);
+  els.contentIdeasList.innerHTML = ideas.length
+    ? ideas.map((idea) => `<li>${escapeHtml(idea)}</li>`).join("")
+    : `<li class="brief-empty">${escapeHtml(t("brief.emptyIdeas"))}</li>`;
+}
+
+function renderBriefItems(container, items, emptyKey, useProvidedCopy) {
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state compact-empty">${escapeHtml(t(emptyKey))}</div>`;
+    return;
+  }
+  container.innerHTML = items.slice(0, 8).map((item) => {
+    const title = String(item.title || t("common.unknown"));
+    const url = safeRawUrl(item.url);
+    const titleMarkup = url === "#"
+      ? `<span class="brief-item-title">${escapeHtml(title)}</span>`
+      : `<a class="brief-item-title" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>`;
+    return `
+      <article class="brief-item">
+        <div class="brief-item-top">
+          <span class="source-badge">${escapeHtml(item.source || t("common.unknown"))}</span>
+          <strong>${number(item.totalScore)}</strong>
+        </div>
+        ${titleMarkup}
+        <p>${escapeHtml(localizedBriefReason(item, useProvidedCopy))}</p>
+      </article>
+    `;
+  }).join("");
+}
+
+function localizedBriefReason(item, useProvidedCopy) {
+  if (useProvidedCopy && item.reason) return item.reason;
+  const signals = [];
+  if (number(item.paymentScore) >= 14) signals.push(t("brief.signalPayment"));
+  if (number(item.painScore) >= 18) signals.push(t("brief.signalPain"));
+  if (number(item.urgencyScore) >= 10) signals.push(t("brief.signalUrgency"));
+  if (number(item.engagement) >= 20) signals.push(t("brief.signalEngagement"));
+  if (signals.length) return signals.slice(0, 2).join(" · ");
+  return t("brief.signalScore", { score: number(item.totalScore) });
+}
+
+function localizedContentIdeas(brief, useProvidedCopy) {
+  if (useProvidedCopy) return brief?.contentIdeas || [];
+  const ideas = [];
+  for (const opportunity of state.opportunities.slice(0, 3)) {
+    const display = localizedOpportunity(opportunity);
+    ideas.push(t("brief.ideaOpportunity", {
+      title: display.title,
+      decision: decisionLabel(opportunity.decision, language),
+    }));
+  }
+  for (const item of [...(brief?.mustRead || []), ...(brief?.quickScan || [])]) {
+    if (ideas.length >= 6) break;
+    ideas.push(t("brief.ideaEvidence", { title: truncateText(item.title, 72) }));
+  }
+  return [...new Set(ideas)].slice(0, 6);
+}
+
+function normalizeBrief(value) {
+  if (!value || typeof value !== "object") return null;
+  const mustRead = Array.isArray(value.mustRead) ? value.mustRead : [];
+  const quickScan = Array.isArray(value.quickScan) ? value.quickScan : [];
+  const skip = Array.isArray(value.skip) ? value.skip : [];
+  const counts = value.counts && typeof value.counts === "object" ? value.counts : {};
+  return {
+    mustRead,
+    quickScan,
+    skip,
+    contentIdeas: Array.isArray(value.contentIdeas)
+      ? value.contentIdeas.filter((idea) => typeof idea === "string" && idea.trim()).map((idea) => idea.trim())
+      : [],
+    counts: {
+      MUST_READ: number(counts.MUST_READ ?? mustRead.length),
+      QUICK_SCAN: number(counts.QUICK_SCAN ?? quickScan.length),
+      SKIP: number(counts.SKIP ?? skip.length),
+    },
+  };
+}
+
+function parseBriefMarkdown(markdown) {
+  if (typeof markdown !== "string" || !markdown.includes("## 今日信息分级")) return null;
+  const counts = {
+    MUST_READ: markdownCount(markdown, "必读"),
+    QUICK_SCAN: markdownCount(markdown, "速览"),
+    SKIP: markdownCount(markdown, "可跳过"),
+  };
+  return {
+    counts,
+    mustRead: parseMarkdownBriefSection(markdown, "必读", "速览"),
+    quickScan: parseMarkdownBriefSection(markdown, "速览", "可跳过"),
+    skip: parseMarkdownBriefSection(markdown, "可跳过", "可直接转化的内容选题"),
+    contentIdeas: parseMarkdownIdeas(markdown),
+  };
+}
+
+function markdownCount(markdown, label) {
+  const match = markdown.match(new RegExp(`^- ${label}：\\s*(\\d+)\\s*条`, "m"));
+  return number(match?.[1]);
+}
+
+function parseMarkdownBriefSection(markdown, heading, nextHeading) {
+  const start = markdown.indexOf(`### ${heading}`);
+  if (start < 0) return [];
+  const bodyStart = start + `### ${heading}`.length;
+  const end = markdown.indexOf(`### ${nextHeading}`, bodyStart);
+  const body = markdown.slice(bodyStart, end < 0 ? markdown.length : end);
+  const pattern = /^\d+\.\s+\*\*\[([^\]]+)]\s+(.+?)\*\*\s{2}\r?\n\s*(.+?)；评分\s+(\d+)\/100；\[查看原文]\((https?:\/\/\S+)\)\s*$/gm;
+  return [...body.matchAll(pattern)].map((match) => ({
+    source: match[1],
+    title: unescapeMarkdown(match[2]),
+    reason: match[3],
+    totalScore: number(match[4]),
+    url: match[5],
+  }));
+}
+
+function parseMarkdownIdeas(markdown) {
+  const marker = "### 可直接转化的内容选题";
+  const start = markdown.indexOf(marker);
+  if (start < 0) return [];
+  return markdown.slice(start + marker.length)
+    .split(/\r?\n/)
+    .map((line) => line.match(/^-\s+(.+)/)?.[1]?.trim())
+    .filter((idea) => idea && !idea.startsWith("暂无"));
+}
+
+function unescapeMarkdown(value) {
+  return String(value || "").replace(/\\([\\`*_{}\[\]()#+.!|-])/g, "$1");
 }
 
 function renderOpportunities() {
@@ -162,8 +351,10 @@ function renderOpportunities() {
     els.opportunityGrid.innerHTML = `<div class="empty-state">${escapeHtml(t("empty.opportunities"))}</div>`;
     return;
   }
+  const delegationConfigured = state.overview?.config?.ai?.employeeDelegationConfigured === true;
   els.opportunityGrid.innerHTML = state.opportunities.slice(0, 9).map((item) => {
     const display = localizedOpportunity(item);
+    const delegation = latestDelegation(item.id);
     return `
       <article class="opportunity-card">
         <div class="opportunity-top">
@@ -183,9 +374,72 @@ function renderOpportunities() {
           <span>${escapeHtml(t("opportunity.validation"))}</span>
           <strong>${escapeHtml(display.priceHint)}</strong>
         </div>
+        ${delegationConfigured && !item.isDemo ? `
+          <div class="employee-action-row">
+            <div>
+              <span class="employee-status ${escapeAttribute(delegation?.status || "idle")}">${escapeHtml(employeeStatusLabel(delegation))}</span>
+              ${delegation ? `<small>${escapeHtml(t("employee.review", { status: reviewStatusLabel(delegation.reviewStatus) }))}</small>` : `<small>${escapeHtml(t("employee.safeNote"))}</small>`}
+            </div>
+            <div class="employee-button-stack">
+              <button class="text-button employee-delegate-button" type="button" data-delegate-opportunity="${escapeAttribute(item.id)}" ${["queued", "running"].includes(delegation?.status) ? "disabled" : ""}>
+                ${escapeHtml(delegation ? t("employee.refreshOrRerun") : t("employee.delegate"))}
+              </button>
+              <button class="text-button employee-delegate-button reddit-geo-button" type="button" data-delegate-reddit-geo="${escapeAttribute(item.id)}" ${["queued", "running"].includes(delegation?.status) ? "disabled" : ""}>
+                ${escapeHtml(t("employee.delegateRedditGeo"))}
+              </button>
+            </div>
+          </div>
+        ` : ""}
       </article>
     `;
   }).join("");
+}
+
+function latestDelegation(opportunityId) {
+  return state.delegations
+    .filter((item) => item.sourceType === "opportunity" && item.sourceRecordId === opportunityId)
+    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0] || null;
+}
+
+function employeeStatusLabel(delegation) {
+  if (!delegation) return t("employee.ready");
+  return t(`employee.status.${delegation.status}`);
+}
+
+function reviewStatusLabel(status) {
+  return t(`employee.reviewStatus.${status || "pending"}`);
+}
+
+async function delegateOpportunity(opportunityId, button, mode = "opportunity") {
+  if (!opportunityId || button.disabled) return;
+  const opportunity = state.opportunities.find((item) => item.id === opportunityId);
+  if (!opportunity || opportunity.isDemo) {
+    showToast(t("employee.demoBlocked"), true);
+    return;
+  }
+  button.disabled = true;
+  button.textContent = t("employee.submitting");
+  try {
+    const objective = mode === "reddit-geo"
+      ? language === "en"
+        ? `Ask BossAI Intelligence Agent to analyze the verified Radar evidence for Reddit communities and GEO opportunities around “${opportunity.title}”, identify community-rule gaps, and produce a review-gated bossai.intelligence-handoff.v1 package. Do not scan, post, message users or change Radar data.`
+        : `让 BossAI Intelligence Agent 基于 Radar 已验证机会“${opportunity.title}”的证据分析 Reddit 社区信号和 GEO 内容机会，标出版规缺口并生成需人工审核的 bossai.intelligence-handoff.v1 交接包。不得扫描、发帖、私信或修改 Radar 数据。`
+      : language === "en"
+        ? `Ask BossAI Intelligence Agent to review the verified Radar opportunity “${opportunity.title}”, its evidence, payment signals and competition, then produce a reviewable BUILD / SELL_SERVICE / WATCH / IGNORE decision framework.`
+        : `让 BossAI Intelligence Agent 复核 Radar 已验证机会“${opportunity.title}”的证据、付费信号和竞争情况，形成可供老板审核的 BUILD / SELL_SERVICE / WATCH / IGNORE 判断框架。`;
+    const result = await postWithAdminKey(`/api/admin/opportunities/${encodeURIComponent(opportunityId)}/delegate`, { objective });
+    const delegation = result.delegation;
+    state.delegations = [
+      delegation,
+      ...state.delegations.filter((item) => item.sourceOperationId !== delegation.sourceOperationId),
+    ];
+    showToast(t("employee.submitted", { status: t(`employee.status.${delegation.status}`) }));
+    renderOpportunities();
+  } catch (error) {
+    showToast(error.message || t("employee.failed"), true);
+    button.disabled = false;
+    button.textContent = t(mode === "reddit-geo" ? "employee.delegateRedditGeo" : "employee.delegate");
+  }
 }
 
 function renderEvidence() {
@@ -207,7 +461,7 @@ function renderEvidence() {
         <div class="evidence-copy">
           ${item.isDemo
             ? `<span class="evidence-title">${escapeHtml(title)}</span>`
-            : `<a href="${safeUrl(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(title)}</a>`}
+            : `<a href="${safeUrl(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>`}
           <p>${escapeHtml(detail)}</p>
         </div>
         <span class="evidence-score">${number(item.totalScore)}</span>
@@ -218,21 +472,44 @@ function renderEvidence() {
 
 function renderSources() {
   const latest = state.overview?.sourceStatus || [];
-  const names = ["reddit", "hackernews", "github"];
+  const expected = ["reddit", "hackernews", "github", "arxiv", "rss"];
+  const names = [...new Set([...expected, ...latest.map((item) => item?.source).filter(Boolean)])];
   els.sourceList.innerHTML = names.map((name) => {
     const item = latest.find((source) => source.source === name);
-    const status = item?.status || "idle";
-    const detail = item
-      ? `${formatNumber(item.items?.length || 0)} ${language === "en" ? "items" : "条"} · ${formatNumber(item.durationMs || 0)}ms`
-      : t("source.waiting");
+    const status = sourceStatusClass(item?.status);
+    const detail = sourceDetail(name, item);
     return `
       <div class="source-row" title="${escapeAttribute(item?.error || "")}">
-        <i class="source-status ${escapeHtml(status)}"></i>
-        <strong>${escapeHtml(name)}</strong>
+        <i class="source-status ${escapeAttribute(status)}"></i>
+        <strong>${escapeHtml(sourceLabel(name))}</strong>
         <span>${escapeHtml(detail)}</span>
       </div>
     `;
   }).join("");
+}
+
+function sourceDetail(name, item) {
+  if (item?.status === "skipped") return t("source.skipped");
+  if (item) {
+    return t("source.result", {
+      count: formatNumber(item.items?.length || 0),
+      duration: formatNumber(item.durationMs || 0),
+    });
+  }
+  if (name === "rss" && number(state.overview?.config?.sources?.rssFeedCount) === 0) {
+    return t("source.notConfigured");
+  }
+  return t("source.waiting");
+}
+
+function sourceLabel(name) {
+  const key = `source.name.${name}`;
+  const translated = t(key);
+  return translated === key ? name : translated;
+}
+
+function sourceStatusClass(status) {
+  return ["success", "partial", "failed", "skipped"].includes(status) ? status : "idle";
 }
 
 function renderSchedule() {
@@ -318,18 +595,6 @@ function englishPriceHint(category, decision) {
   return category === "developer-tools" ? "$29–$99/month" : "$99–$499/year or usage-based";
 }
 
-const demoEvidenceTitles = {
-  "demo-support-1": "More than 200 Shopify after-sales messages a day; the team will pay for AI reply drafts",
-  "demo-support-2": "Order status, tracking and refund policy need to live in one support workspace",
-  "demo-support-3": "Small ecommerce teams need controllable AI support, not fully autonomous replies",
-  "demo-content-1": "Too many products and too little time: the team needs batch short-video production",
-  "demo-content-2": "Batch ecommerce video generation lacks asset tracking and failure recovery",
-  "demo-content-3": "Sellers need a product-to-publishing workflow, not another isolated video model",
-  "demo-research-1": "Manual Reddit and competitor-review research is slow and lacks a shared evidence library",
-  "demo-research-2": "Founder intelligence tools need evidence, scoring and a clear do-not-build list",
-  "demo-research-3": "The radar needs source-level failure isolation, deduplication and auditable scoring",
-};
-
 function localizedEvidenceTitle(item) {
   if (language === "en" && item.isDemo) return demoEvidenceTitles[item.externalId] || item.title;
   return item.title;
@@ -361,7 +626,6 @@ function setStatus(text, kind) {
   els.systemStatus.className = `status-pill${kind ? ` ${kind}` : ""}`;
 }
 
-let toastTimer;
 function showToast(message, error = false) {
   clearTimeout(toastTimer);
   els.toast.textContent = message;
@@ -371,11 +635,15 @@ function showToast(message, error = false) {
   }, 4_500);
 }
 
-async function postWithAdminKey(url, retry = true) {
+async function postWithAdminKey(url, body, retry = true) {
   try {
     return await api(url, {
       method: "POST",
-      headers: state.adminKey ? { "x-radar-key": state.adminKey } : {},
+      headers: {
+        ...(state.adminKey ? { "x-radar-key": state.adminKey } : {}),
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch (error) {
     if (retry && error.status === 401) {
@@ -383,7 +651,7 @@ async function postWithAdminKey(url, retry = true) {
       if (key?.trim()) {
         state.adminKey = key.trim();
         sessionStorage.setItem("radar-admin-key", state.adminKey);
-        return postWithAdminKey(url, false);
+        return postWithAdminKey(url, body, false);
       }
     }
     throw error;
@@ -451,7 +719,7 @@ function relativeTime(value) {
 function safeRawUrl(value) {
   try {
     const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : "#";
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password ? url.href : "#";
   } catch {
     return "#";
   }
@@ -482,3 +750,13 @@ function number(value) {
 function pad(value) {
   return String(number(value)).padStart(2, "0");
 }
+
+function truncateText(value, max) {
+  const clean = String(value || "").replace(/\s+/g, " ").trim();
+  return clean.length <= max ? clean : `${clean.slice(0, Math.max(0, max - 1))}…`;
+}
+
+await loadDashboard();
+setInterval(async () => {
+  if (state.overview?.running) await loadDashboard({ quiet: true });
+}, 12_000);

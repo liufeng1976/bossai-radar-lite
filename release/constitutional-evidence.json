@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "evidenceId": "bossai-radar-intelligence-manager-plugin-v0.1.0-2026-08-05",
+  "batchId": "bossai-radar-intelligence-manager-plugin-v0.1.0-2026-08-05",
+  "projectId": "bossai-radar-lite",
+  "constitution": {
+    "version": "2026.08.04.2",
+    "sha256": "c87e3e1d89d6bfddc9a032847ca921cc5375f58353ed70aef4885fa112bbc825",
+    "rootKeyId": "bossai-constitution-root-2026-08-r4"
+  },
+  "claimedCompletionLevel": 2,
+  "releaseScope": "technical_baseline",
+  "userOutcome": "A verified Radar opportunity can enter a governed BossAI Manager task routed to the independent Intelligence Agent while Radar retains source evidence, deterministic scoring, reports, leads and SQLite authority.",
+  "userVisibleResult": "The opportunity card creates a Manager task only when bossai-intelligence-agent@0.1.0 is signature verified, enabled, healthy and contract compatible. Execution and review state remain separate and no external action is claimed.",
+  "realEntryValidation": {
+    "entry": "BossAI Radar Lite real server delegation endpoint plus packaged Intelligence Agent child process",
+    "checkId": "real-entry:radar-intelligence-manager-plugin-v0.1.0",
+    "scenarios": [
+      "Exact plugin installation readiness is checked before task creation",
+      "New delegation returns a BossAI Manager Task ID routed only to bossai-intelligence-agent",
+      "Repeated source operation reuses the existing local Manager reference",
+      "Manager task state and event history are read through the compatibility Radar routes",
+      "Demo work, missing authentication and unsigned plugin state fail closed",
+      "The plugin accepts, waits for approval, survives offline approval and resumes after restart",
+      "The result states no scan, no Radar mutation, no lead mutation, no outreach and no publication"
+    ]
+  },
+  "machineChecks": [
+    { "checkId": "constitution-integrity", "executionMode": "rerun_at_gate" },
+    { "checkId": "product-thinking", "executionMode": "rerun_at_gate" },
+    { "checkId": "agent-portfolio", "executionMode": "rerun_at_gate" },
+    { "checkId": "merge-boundaries", "executionMode": "rerun_at_gate" },
+    { "checkId": "ai-gateway-boundary", "executionMode": "rerun_at_gate" },
+    { "checkId": "openapi", "executionMode": "rerun_at_gate" },
+    { "checkId": "typecheck", "executionMode": "rerun_at_gate" },
+    { "checkId": "radar-build", "executionMode": "rerun_at_gate" },
+    { "checkId": "radar-tests", "executionMode": "rerun_at_gate" },
+    { "checkId": "frontend-syntax", "executionMode": "rerun_at_gate" },
+    { "checkId": "i18n", "executionMode": "rerun_at_gate" },
+    { "checkId": "bossai-migration-boundary", "executionMode": "rerun_at_gate" },
+    { "checkId": "intelligence-agent-manager-integration", "executionMode": "rerun_at_gate" },
+    { "checkId": "real-entry:radar-intelligence-manager-plugin-v0.1.0", "executionMode": "rerun_at_gate" }
+  ],
+  "unresolvedGaps": [
+    "The Intelligence Agent package has no production release signature.",
+    "The plugin is not formally registered as an AI Employee.",
+    "Production deployment must provision a protected BossAI OS identity with the required Agent permissions.",
+    "The product and plugin have not been validated by external real users or commercial orders.",
+    "Automatic source collection and external actions remain intentionally outside the Agent plugin."
+  ],
+  "generatedAt": "2026-08-05T08:19:00+08:00"
+}

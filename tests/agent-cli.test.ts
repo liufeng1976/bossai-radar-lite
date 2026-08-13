@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import test from "node:test";
 
-const ADMIN_KEY = "agent-cli-admin";
+const ADMIN_KEY = "agent-cli-admin-key-1234567890";
 
 test("agent CLI returns JSON and keeps scan/write permissions disabled by default", async (context) => {
   const dataDir = mkdtempSync(path.join(os.tmpdir(), "radar-agent-cli-"));

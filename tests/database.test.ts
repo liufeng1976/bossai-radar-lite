@@ -6,7 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { RadarDatabase } from "../src/database.js";
 import { scoreEvidence } from "../src/scoring.js";
-import type { Opportunity } from "../src/types.js";
+import type { DailyBrief, Opportunity } from "../src/types.js";
 
 test("persists runs, evidence, opportunities and reports", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "radar-lite-"));
@@ -23,6 +23,47 @@ test("persists runs, evidence, opportunities and reports", () => {
       publishedAt: new Date().toISOString(),
       engagement: 12,
       query: "customer support AI",
+      community: "Pets",
+      sourceContext: {
+        schema: "bossai.reddit-community-context.v1",
+        community: "Pets",
+        status: "available",
+        aboutStatus: "available",
+        rulesStatus: "available",
+        pinnedPostsStatus: "available",
+        aboutUrl: "https://www.reddit.com/r/Pets/about/",
+        rulesUrl: "https://www.reddit.com/r/Pets/about/rules",
+        description: "A community for pet owners.",
+        rules: [{ shortName: "No spam", description: "Disclose commercial affiliation." }],
+        pinnedPosts: [{ title: "Community guide", url: "https://www.reddit.com/r/Pets/comments/guide/" }],
+        fetchedAt: "2026-08-10T00:00:00.000Z",
+      },
+    }));
+    db.saveEvidence(scoreEvidence({
+      source: "reddit",
+      externalId: "1",
+      title: "Manual customer support is painful and we would pay for automation",
+      body: "Budget $99/month. Need this urgently for our Shopify store.",
+      url: "https://example.com/1",
+      author: "tester",
+      publishedAt: new Date().toISOString(),
+      engagement: 99,
+      query: "customer support AI",
+      community: "Pets",
+      sourceContext: {
+        schema: "bossai.reddit-community-context.v1",
+        community: "Pets",
+        status: "unavailable",
+        aboutStatus: "unavailable",
+        rulesStatus: "unavailable",
+        pinnedPostsStatus: "unavailable",
+        aboutUrl: "https://www.reddit.com/r/Pets/about/",
+        rulesUrl: "https://www.reddit.com/r/Pets/about/rules",
+        description: "",
+        rules: [],
+        pinnedPosts: [],
+        fetchedAt: "2026-08-10T01:00:00.000Z",
+      },
     }));
     const opportunity: Opportunity = {
       id: "customer-support",
@@ -43,7 +84,15 @@ test("persists runs, evidence, opportunities and reports", () => {
       createdAt: new Date().toISOString(),
     };
     db.replaceOpportunities([opportunity]);
-    const report = db.saveReport(run.id, "摘要", "# 报告");
+    const brief: DailyBrief = {
+      generatedAt: new Date().toISOString(),
+      mustRead: [],
+      quickScan: [],
+      skip: [],
+      contentIdeas: ["验证内容选题"],
+      counts: { MUST_READ: 0, QUICK_SCAN: 0, SKIP: 0 },
+    };
+    const report = db.saveReport(run.id, "摘要", "# 报告", brief, "# Report", brief);
     const finished = db.finishRun(run.id, "success", {
       collectedCount: 1,
       evidenceCount: 1,
@@ -52,8 +101,14 @@ test("persists runs, evidence, opportunities and reports", () => {
 
     assert.equal(finished.status, "success");
     assert.equal(db.listEvidence(10).length, 1);
+    assert.equal(db.listEvidence(10)[0]?.community, "Pets");
+    assert.equal(db.listEvidence(10)[0]?.sourceContext?.rulesStatus, "available");
+    assert.equal(db.listEvidence(10)[0]?.sourceContext?.rules[0]?.shortName, "No spam");
     assert.equal(db.listOpportunities(10)[0]?.decision, "SELL_SERVICE");
     assert.equal(db.latestReport()?.id, report.id);
+    assert.equal(db.latestReport()?.brief?.contentIdeas[0], "验证内容选题");
+    assert.equal(db.latestReport()?.markdownEnglish, "# Report");
+    assert.equal(db.latestReport()?.briefEnglish?.counts.MUST_READ, 0);
     assert.deepEqual(db.stats(), {
       runs: 1,
       evidence: 1,
@@ -112,6 +167,28 @@ test("upgrades a v0.1 database with demo columns without destructive reset", () 
       evidence_ids_json TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trigger TEXT NOT NULL,
+      status TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      finished_at TEXT,
+      collected_count INTEGER NOT NULL DEFAULT 0,
+      evidence_count INTEGER NOT NULL DEFAULT 0,
+      opportunity_count INTEGER NOT NULL DEFAULT 0,
+      errors_json TEXT NOT NULL DEFAULT '[]'
+    );
+    CREATE TABLE reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_id INTEGER NOT NULL,
+      generated_at TEXT NOT NULL,
+      executive_summary TEXT NOT NULL,
+      markdown TEXT NOT NULL
+    );
+    INSERT INTO runs (trigger, status, started_at)
+    VALUES ('manual', 'success', '2026-01-01T00:00:00.000Z');
+    INSERT INTO reports (run_id, generated_at, executive_summary, markdown)
+    VALUES (1, '2026-01-01T00:00:01.000Z', 'legacy summary', '# Legacy report');
   `);
   legacy.close();
 
@@ -131,6 +208,8 @@ test("upgrades a v0.1 database with demo columns without destructive reset", () 
     }));
     assert.equal(saved.isDemo, true);
     assert.equal(db.stats().demoEvidence, 1);
+    assert.equal(db.latestReport()?.brief, null);
+    assert.equal(db.latestReport()?.markdownEnglish, null);
   } finally {
     db.close();
     rmSync(directory, { recursive: true, force: true });

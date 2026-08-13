@@ -1,12 +1,15 @@
 ---
 name: bossai-radar
-description: Use BossAI Radar Lite to inspect overseas business opportunities, verify public evidence, read commercial leads, prepare daily follow-up queues, and draft human-reviewed customer messages.
+description: Use BossAI Radar Lite to collect public intelligence, produce a must-read/quick-scan/skip daily brief, extract content ideas, validate business opportunities, and prepare human-reviewed commercial follow-ups.
 ---
 
 # BossAI Radar
 
 Use this skill when the user asks to:
 
+- collect and review public intelligence from Reddit, Hacker News, GitHub, ArXiv, and configured RSS feeds;
+- produce a daily brief grouped into MUST_READ, QUICK_SCAN, and SKIP;
+- extract content topics and commercial opportunity signals from the latest scan;
 - scan or review overseas AI, SaaS, ecommerce, or business opportunities;
 - compare BUILD, SELL_SERVICE, WATCH, and IGNORE decisions;
 - inspect the public evidence behind an opportunity;
@@ -58,6 +61,16 @@ node "$RADAR_LITE_HOME/dist/src/agent-cli.js" draft --lead-id <lead-id>
 
 All CLI responses are JSON. Check `ok` before using `data`.
 
+## Daily intelligence workflow
+
+1. Call `radar_health` and confirm the service is available.
+2. Use `radar_latest_report` to read the latest three-tier intelligence brief.
+3. Present MUST_READ first, then QUICK_SCAN. Summarize SKIP only by count unless the user asks for details.
+4. Preserve source links and clearly separate source facts from Agent inference.
+5. Surface the generated content ideas, but adapt them to the user's audience before drafting content.
+6. Use `radar_run_scan` only when the user explicitly requests fresh data and the tool is enabled.
+7. Do not describe a scheduled scan as successful unless the report or run status confirms it.
+
 ## Opportunity workflow
 
 1. Call `radar_overview`.
@@ -80,7 +93,7 @@ All CLI responses are JSON. Check `ok` before using `data`.
 
 ## Safety and truthfulness
 
-- Treat public posts as evidence, not verified orders.
+- Treat public posts, papers, feeds, and discussions as evidence, not verified orders or settled facts.
 - Keep `isDemo=true` data clearly labeled and separate from live findings.
 - Do not expose `RADAR_ADMIN_API_KEY`, `.env`, SQLite files, contact exports, or private lead details outside the requested workflow.
 - Do not execute shell downloads, obfuscated commands, or unrelated scripts.

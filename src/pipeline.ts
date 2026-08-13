@@ -1,9 +1,9 @@
 import { enrichOpportunity } from "./ai.js";
 import { collectAll } from "./collectors.js";
 import { RadarDatabase } from "./database.js";
-import { createReport } from "./report.js";
+import { createEnglishReport, createReport } from "./report.js";
 import { buildOpportunities, scoreEvidence } from "./scoring.js";
-import type { Opportunity, Report, ScanRunSummary, ScanTrigger, SourceOutcome } from "./types.js";
+import type { Opportunity, Report, ScanRunSummary, ScanTrigger, ScoredEvidence, SourceOutcome } from "./types.js";
 
 export interface ScanResult {
   run: ScanRunSummary;
@@ -44,6 +44,7 @@ export class RadarEngine {
     let collectedCount = 0;
     let evidenceCount = 0;
     let opportunities: Opportunity[] = [];
+    const scoredItems: ScoredEvidence[] = [];
     const errors: string[] = [];
 
     try {
@@ -57,6 +58,7 @@ export class RadarEngine {
       const seen = new Set<string>();
       for (const raw of sourceOutcomes.flatMap((outcome) => outcome.items)) {
         const scored = scoreEvidence(raw);
+        scoredItems.push(scored);
         if (scored.totalScore < 12 || seen.has(scored.fingerprint)) continue;
         seen.add(scored.fingerprint);
         this.db.saveEvidence(scored);
@@ -70,14 +72,22 @@ export class RadarEngine {
       );
       this.db.replaceOpportunities(opportunities);
 
-      const reportContent = createReport(run.id, opportunities, sourceOutcomes, collectedCount, evidenceCount);
-      const report = this.db.saveReport(run.id, reportContent.executiveSummary, reportContent.markdown);
-      const successfulSources = sourceOutcomes.filter((outcome) => outcome.status === "success").length;
-      const status = successfulSources === sourceOutcomes.length
-        ? "success"
-        : successfulSources > 0 || collectedCount > 0
-          ? "partial"
-          : "failed";
+      const reportContent = createReport(run.id, opportunities, sourceOutcomes, collectedCount, evidenceCount, scoredItems);
+      const englishReportContent = createEnglishReport({
+        ...run,
+        collectedCount,
+        evidenceCount,
+        opportunityCount: opportunities.length,
+      }, opportunities, scoredItems);
+      const report = this.db.saveReport(
+        run.id,
+        reportContent.executiveSummary,
+        reportContent.markdown,
+        reportContent.brief,
+        englishReportContent.markdown,
+        englishReportContent.brief,
+      );
+      const status = scanStatusForOutcomes(sourceOutcomes, collectedCount);
       const finishedRun = this.db.finishRun(
         run.id,
         status,
@@ -97,4 +107,15 @@ export class RadarEngine {
       return { run: finishedRun, report: null, opportunities, sources: sourceOutcomes };
     }
   }
+}
+
+export function scanStatusForOutcomes(
+  sourceOutcomes: SourceOutcome[],
+  collectedCount: number,
+): Exclude<ScanRunSummary["status"], "running"> {
+  const attemptedSources = sourceOutcomes.filter((outcome) => outcome.status !== "skipped");
+  const successfulSources = attemptedSources.filter((outcome) => outcome.status === "success").length;
+  if (attemptedSources.length > 0 && successfulSources === attemptedSources.length) return "success";
+  if (successfulSources > 0 || collectedCount > 0) return "partial";
+  return "failed";
 }

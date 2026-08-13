@@ -6,9 +6,9 @@
 
 [中文说明](README.md) · **English**
 
-> Collect public overseas market evidence, identify repeated pain and willingness to pay, and produce an actionable CEO opportunity report.
+> Collect public intelligence, compress it into must-read / quick-scan / skip tiers, and continue identifying repeated pain, willingness to pay, and actionable opportunities.
 
-BossAI Radar Lite is the **source-available, non-commercial edition** of BossAI Radar. It is not a news aggregator and does not require users to manually enter leads.
+BossAI Radar Lite is the **source-available, non-commercial edition** of BossAI Radar. It is both an installable Agent intelligence Skill and an evidence-backed opportunity validation tool.
 
 ## Give the Repository Directly to an Agent
 
@@ -37,9 +37,11 @@ Public source collection
         ↓
 Deduplication, timeouts and source-level failure isolation
         ↓
-Pain / payment / competition / urgency scoring
+MUST_READ / QUICK_SCAN / SKIP triage
         ↓
-Cross-source opportunity clustering
+Ready-to-use content ideas
+        ↓
+Pain / payment / competition / urgency scoring
         ↓
 BUILD / SELL_SERVICE / WATCH / IGNORE
         ↓
@@ -51,7 +53,8 @@ Target customer, offer guidance and a 7-day action plan
 - Chinese and English dashboard with one-click language switching;
 - bilingual commercial-license application and Pro waitlist;
 - Chinese and English Markdown report downloads;
-- Reddit, Hacker News and GitHub Issues collectors;
+- Reddit, Hacker News, GitHub Issues, ArXiv, and configurable RSS/Atom collectors;
+- three-tier daily brief and ready-to-use content ideas;
 - deterministic opportunity scoring that AI cannot override;
 - local SQLite evidence store;
 - clearly labeled synthetic demo data;
@@ -80,8 +83,26 @@ It preserves the complete single-machine business-decision loop, but excludes en
 | Reddit | Public Search JSON | Complaints, alternatives and willingness to pay |
 | Hacker News | Algolia public API | Product discussion and commercialization signals |
 | GitHub Issues | GitHub Search API | Feature gaps, integration failures and workflow pain |
+| ArXiv | Atom API | AI, LLM, Agent, and related research progress |
+| RSS / Atom | User-configured public feeds | Industry blogs, product updates, research labs, and vertical media |
 
-Each source has its own timeout, item limit, status and error record. One failed source cannot fail the entire run.
+Up to 30 RSS feeds can be configured. Each source type has its own timeout, item limit, status and error record. One failed source cannot fail the entire run.
+
+## Reddit/GEO Intelligence Employee Handoff
+
+Opportunity cards now include a **Create Reddit/GEO brief** action. Radar Lite passes selected non-DEMO public evidence to the existing `bossai-intelligence-agent@0.3.0` as bounded `EVIDENCE_JSON` records, preserving the source URL, subreddit, timestamp, engagement, deterministic Radar score, tags and query.
+
+The employee returns `intelligence.reddit-geo-brief.md` with community signals, GEO site-content opportunities, community-rule gaps and a review-gated `bossai.intelligence-handoff.v1`. It does not crawl, post, message users, bulk-reply or mutate Radar data. Radar may enrich up to `RADAR_REDDIT_CONTEXT_COMMUNITIES` observed subreddits during its own authorized scan, caching successful public context for 24 hours and failures for 15 minutes. Downstream drafting stays blocked until rules coverage and identity-disclosure requirements are reviewed.
+
+## Three-Tier Intelligence Brief
+
+Every scan automatically groups findings into:
+
+- **MUST_READ**: explicit payment, strong pain, high urgency, or a high evidence score;
+- **QUICK_SCAN**: useful context that does not yet justify immediate action;
+- **SKIP**: weak, repetitive, or low-evidence signals.
+
+The report also generates up to six topics that can be converted into articles, short-video scripts, or social posts. Agents should present MUST_READ first, then QUICK_SCAN, and summarize SKIP by count unless details are requested.
 
 ## Deterministic Opportunity Scoring
 
@@ -345,7 +366,10 @@ RADAR_DAILY_MINUTE=0
 RADAR_TIMEZONE=Asia/Shanghai
 RADAR_LOOKBACK_DAYS=14
 RADAR_MAX_ITEMS_PER_SOURCE=20
+RADAR_REDDIT_CONTEXT_COMMUNITIES=3
 RADAR_TOPICS=AI ecommerce,Shopify automation,Amazon seller tools,customer support AI,content automation
+RADAR_ARXIV_CATEGORIES=cs.AI,cs.CL,cs.LG
+RADAR_RSS_FEEDS=https://news.ycombinator.com/rss;https://export.arxiv.org/rss/cs.AI
 
 AI_PROVIDER=deterministic
 AI_BASE_URL=https://api.deepseek.com
@@ -373,6 +397,8 @@ Before public deployment:
 4. disable the demo endpoint when it is not needed;
 5. comply with every public source's API terms and rate limits;
 6. upgrade to a commercial Pro deployment when team permissions, tenant isolation or an SLA are required.
+
+When `HOST` binds to a non-loopback address, the service refuses to start with the default administrator key or a key shorter than 24 characters.
 
 See [SECURITY.md](SECURITY.md).
 

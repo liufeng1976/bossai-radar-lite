@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import test from "node:test";
 
-const ADMIN_KEY = "integration-admin-key";
+const ADMIN_KEY = "integration-admin-key-1234567890";
 
 test("protects commercial lead administration while keeping public applications available", async (context) => {
   const dataDir = mkdtempSync(path.join(os.tmpdir(), "radar-lead-api-"));

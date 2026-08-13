@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEnglishReport } from "../src/report.js";
-import type { Opportunity, SavedEvidence, ScanRunSummary } from "../src/types.js";
+import { createEnglishReport, createReport } from "../src/report.js";
+import type { Opportunity, SavedEvidence, ScanRunSummary, SourceOutcome } from "../src/types.js";
 
 const run: ScanRunSummary = {
   id: 7,
@@ -57,11 +57,36 @@ const evidence: SavedEvidence = {
   createdAt: "2026-07-12T08:00:10.000Z",
 };
 
+test("creates a Chinese report with the structured three-tier brief", () => {
+  const sources: SourceOutcome[] = [{
+    source: "reddit",
+    status: "success",
+    items: [evidence],
+    durationMs: 25,
+  }];
+  const report = createReport(run.id, [opportunity], sources, 1, 1, [evidence]);
+
+  assert.deepEqual(report.brief.counts, { MUST_READ: 1, QUICK_SCAN: 0, SKIP: 0 });
+  assert.match(report.executiveSummary, /必读 1 条、速览 0 条/);
+  assert.match(report.markdown, /今日信息分级/);
+  assert.match(report.markdown, /必读：1 条/);
+  assert.match(report.markdown, /可直接转化的内容选题/);
+  assert.match(report.markdown, /\[查看原文\]\(<https:\/\/example\.com\/evidence>\)/);
+});
+
 test("creates an English report from structured opportunity data", () => {
   const report = createEnglishReport(run, [opportunity], [evidence]);
   assert.match(report.executiveSummary, /current top priority/i);
   assert.match(report.markdown, /BossAI Radar Lite Business Opportunity Report/);
   assert.match(report.markdown, /AI Customer Support & After-Sales Copilot/);
+  assert.match(report.markdown, /Three-Tier Intelligence Brief/);
+  assert.match(report.markdown, /MUST_READ: 1 items/);
+  assert.match(report.markdown, /QUICK_SCAN: 0 items/);
+  assert.match(report.markdown, /SKIP: 0 items/);
+  assert.match(report.markdown, /Ready-to-Use Content Ideas/);
+  assert.match(report.markdown, /\[View original\]\(<https:\/\/example\.com\/evidence>\)/);
+  assert.match(report.markdown, /\[Open source\]\(<https:\/\/example\.com\/evidence>\)/);
+  assert.equal(report.brief.counts.MUST_READ, 1);
   assert.match(report.markdown, /7-Day Action Plan/);
   assert.match(report.markdown, /non-commercial use only/i);
   assert.doesNotMatch(report.markdown, /中文摘要|中文步骤|人工回复慢/);
@@ -80,5 +105,7 @@ test("labels an English demo report and translates demo evidence titles", () => 
   assert.match(report.markdown, /Synthetic Demo Report/);
   assert.match(report.markdown, /all records in this report are synthetic examples/i);
   assert.match(report.markdown, /More than 200 Shopify after-sales messages/);
+  assert.match(report.markdown, /Ready-to-Use Content Ideas/);
+  assert.match(report.markdown, /AI Customer Support & After-Sales Copilot/);
   assert.doesNotMatch(report.markdown, /中文演示标题/);
 });

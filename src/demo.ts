@@ -1,5 +1,5 @@
 import { RadarDatabase } from "./database.js";
-import { createReport } from "./report.js";
+import { createEnglishReport, createReport } from "./report.js";
 import { buildOpportunities, scoreEvidence } from "./scoring.js";
 import type { RawItem, SourceOutcome } from "./types.js";
 
@@ -124,13 +124,26 @@ export function seedDemoData(db: RadarDatabase) {
   db.replaceOpportunities(opportunities);
 
   const sourceOutcomes = buildSourceOutcomes();
-  const baseReport = createReport(run.id, opportunities, sourceOutcomes, DEMO_ITEMS.length, saved.length);
+  const baseReport = createReport(run.id, opportunities, sourceOutcomes, DEMO_ITEMS.length, saved.length, saved);
   const executiveSummary = `【演示数据】${baseReport.executiveSummary}`;
   const markdown = baseReport.markdown.replace(
-    "# BossAI Radar Lite 商业机会日报",
+    "# BossAI Radar Lite 情报与商业机会日报",
     `# BossAI Radar Lite 演示日报\n\n> **演示声明：${DEMO_NOTICE}**`,
   );
-  const report = db.saveReport(run.id, executiveSummary, markdown);
+  const englishReport = createEnglishReport({
+    ...run,
+    collectedCount: DEMO_ITEMS.length,
+    evidenceCount: saved.length,
+    opportunityCount: opportunities.length,
+  }, opportunities, saved);
+  const report = db.saveReport(
+    run.id,
+    executiveSummary,
+    markdown,
+    baseReport.brief,
+    englishReport.markdown,
+    englishReport.brief,
+  );
   const finishedRun = db.finishRun(
     run.id,
     "success",
@@ -142,7 +155,7 @@ export function seedDemoData(db: RadarDatabase) {
     [],
   );
 
-  return { run: finishedRun, report, opportunities, sources: sourceOutcomes };
+  return { run: finishedRun, report, opportunities, sources: sourceOutcomes, brief: baseReport.brief };
 }
 
 function buildSourceOutcomes(): SourceOutcome[] {

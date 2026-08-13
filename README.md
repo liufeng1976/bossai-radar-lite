@@ -6,9 +6,9 @@
 
 **中文** · [English](README_EN.md)
 
-> 自动搜索海外公开信息，识别真实痛点、付费表达与竞品信号，生成可执行的 CEO 商业机会日报。
+> 自动采集海外公开信息，用「必读 / 速览 / 可跳过」三级筛选压缩信息流，并继续识别真实痛点、付费表达与商业机会。
 
-BossAI Radar Lite 是 BossAI Radar 的 **source-available 非商业版**。它不是新闻聚合器，也不要求用户手工录入线索。
+BossAI Radar Lite 是 BossAI Radar 的 **source-available 非商业版**。它既是 Agent 可安装的情报晨报 Skill，也是带证据链的商业机会验证工具。
 
 ## 直接交给 Agent 安装
 
@@ -39,9 +39,11 @@ npx -y github:liufeng1976/bossai-radar-lite --agent codex
     ↓
 去重、超时与失败隔离
     ↓
-痛点 / 付费 / 竞争 / 紧迫度评分
+必读 / 速览 / 可跳过三级筛选
     ↓
-跨来源机会聚类
+可直接转化的内容选题
+    ↓
+痛点 / 付费 / 竞争 / 紧迫度评分
     ↓
 BUILD / SELL_SERVICE / WATCH / IGNORE
     ↓
@@ -69,8 +71,26 @@ Lite 用于让个人开发者、研究者和潜在客户验证 BossAI Radar 的�
 | Reddit | 公开 Search JSON | 用户抱怨、替代方案、付费表达 |
 | Hacker News | Algolia 公共搜索接口 | 产品讨论、创业需求与技术商业化信号 |
 | GitHub Issues | GitHub 公共 Search API | 功能缺口、集成问题与真实工作流痛点 |
+| ArXiv | Atom API | AI、LLM、Agent 与相关研究进展 |
+| RSS / Atom | 用户自定义公开 Feed | 行业博客、产品更新、研究机构与垂直媒体 |
 
-每个来源都有独立超时、数量限制、运行状态和错误记录。单一来源失败不会拖垮整轮扫描。
+RSS 最多可配置 30 个 Feed。每类来源都有独立超时、数量限制、运行状态和错误记录，单一来源失败不会拖垮整轮扫描。
+
+### Reddit/GEO 情报员工交接
+
+机会卡片现提供“生成 Reddit/GEO 情报包”入口。Radar Lite 会把选中的非演示公开证据以受控 `EVIDENCE_JSON` 交给现有 `bossai-intelligence-agent@0.3.0`，保留原始链接、subreddit、时间、互动量、确定性 Radar 分数、标签和查询词。
+
+情报员工生成 `intelligence.reddit-geo-brief.md`，整理社区信号、GEO 站内内容机会、版规缺口和 `bossai.intelligence-handoff.v1`。它不会自动抓取、发帖、私信、批量回复或修改 Radar 数据；Sidebar/About、版规、置顶帖、Flair 和身份披露要求未核验时，下游内容交接保持阻塞并等待人工审核。
+
+### 三层情报晨报
+
+每次扫描都会把当轮信息自动分为：
+
+- **必读**：明确付费、强痛点、高紧迫度或高综合证据分；
+- **速览**：有参考价值，但暂不足以立即采取行动；
+- **可跳过**：弱信号、重复性高或缺少实质证据。
+
+日报同时生成最多 6 个可直接转成文章、口播或社媒内容的选题。Agent 默认先展示必读，再展示速览，可跳过内容只汇总数量。
 
 ### 确定性机会评分
 
@@ -99,6 +119,8 @@ AI 只能解释证据、优化标题和行动计划，不能篡改机会分数�
 右上角可在“中文 / English”之间切换，语言会自动带到商业授权页、Pro 等待名单、申请邮件和日报下载。
 
 - CEO 结论；
+- 必读 / 速览 / 可跳过三级情报；
+- 可直接转化的内容选题；
 - 机会优先级；
 - 目标客户；
 - 核心问题；
@@ -316,7 +338,10 @@ RADAR_DAILY_MINUTE=0
 RADAR_TIMEZONE=Asia/Shanghai
 RADAR_LOOKBACK_DAYS=14
 RADAR_MAX_ITEMS_PER_SOURCE=20
+RADAR_REDDIT_CONTEXT_COMMUNITIES=3
 RADAR_TOPICS=AI ecommerce,Shopify automation,Amazon seller tools,customer support AI,content automation
+RADAR_ARXIV_CATEGORIES=cs.AI,cs.CL,cs.LG
+RADAR_RSS_FEEDS=https://news.ycombinator.com/rss;https://export.arxiv.org/rss/cs.AI
 
 AI_PROVIDER=deterministic
 AI_BASE_URL=https://api.deepseek.com
@@ -336,7 +361,7 @@ RADAR_SKILL_ALLOW_LEAD_WRITE=false
 RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 ```
 
-`GITHUB_TOKEN` 不是必需项，但可提高 GitHub 公共搜索限额。
+`GITHUB_TOKEN` 不是必需项，但可提高 GitHub 公共搜索限额。`RADAR_RSS_FEEDS` 使用分号或换行分隔，最多配置 30 个公开 Feed。`RADAR_REDDIT_CONTEXT_COMMUNITIES` 控制每轮最多补充多少个 subreddit 的 Sidebar/About、公开版规与置顶帖上下文；设为 `0` 可关闭。成功上下文缓存 24 小时，失败结果仅缓存 15 分钟。
 
 公网部署前必须：
 
@@ -346,6 +371,8 @@ RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 4. 关闭不需要的演示入口：`RADAR_DEMO_ENABLED=false`；
 5. 遵守各公开来源的接口条款、限额和机器人政策；
 6. 需要企业权限、租户隔离和 SLA 时升级到商业 Pro 版。
+
+当 `HOST` 绑定到非回环地址时，服务会拒绝默认值或少于 24 字符的管理员密钥并停止启动。
 
 更多安全说明见 [SECURITY.md](SECURITY.md)。
 
@@ -400,7 +427,8 @@ bossai-radar-lite/
 ├── scripts/                    # 构建、Skill 安装、发布打包与发布门禁
 ├── src/
 │   ├── ai.ts                   # 可选 OpenAI-compatible 分析
-│   ├── collectors.ts           # Reddit / HN / GitHub 采集器
+│   ├── brief.ts                # 三层情报简报与内容选题
+│   ├── collectors.ts           # Reddit / HN / GitHub / ArXiv / RSS 采集器
 │   ├── config.ts               # 环境配置
 │   ├── database.ts             # SQLite 证据库和兼容迁移
 │   ├── demo.ts                 # 明确标记的合成演示数据
@@ -413,6 +441,7 @@ bossai-radar-lite/
 │   ├── pipeline.ts             # 全链路编排与失败隔离
 │   ├── report.ts               # CEO 日报
 │   ├── scheduler.ts            # 每日定点扫描
+│   ├── security.ts             # 公网监听与管理员密钥启动门禁
 │   ├── scoring.ts              # 确定性评分与决策门槛
 │   ├── server.ts               # API 与静态站点
 │   ├── types.ts
