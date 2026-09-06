@@ -4,7 +4,7 @@
 
 # BossAI Radar Lite
 
-**中文** · [English](README_EN.md)
+**中文** · [English](README_EN.md) · [BossAI 下一步 / Next Steps](BOSSAI_NEXT_STEPS.md)
 
 > 自动采集海外公开信息，用「必读 / 速览 / 可跳过」三级筛选压缩信息流，并继续识别真实痛点、付费表达与商业机会。
 
