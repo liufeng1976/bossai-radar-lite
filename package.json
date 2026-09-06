@@ -26,7 +26,9 @@
     "check:i18n": "node scripts/i18n-check.mjs",
     "verify:bossai-migration": "node scripts/verify-bossai-migration.mjs",
     "verify:constitutional-migration": "node scripts/verify-constitutional-migration.mjs",
-    "check": "npm run build && npm run test && npm run check:frontend && npm run check:i18n && npm run verify:bossai-migration",
+    "growth:traffic": "node scripts/github-traffic-report.mjs",
+    "growth:traffic:check": "node scripts/github-traffic-report.mjs --self-test",
+    "check": "npm run build && npm run test && npm run check:frontend && npm run check:i18n && npm run verify:bossai-migration && npm run growth:traffic:check",
     "release:check": "npm run check && node scripts/release-check.mjs",
     "package:release": "npm run release:check && node scripts/package-release.mjs"
   },
