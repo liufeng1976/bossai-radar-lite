@@ -96,6 +96,32 @@ test("Manager detail maps execution and review state without fabricating externa
     run: { agentId: INTELLIGENCE_AGENT_ID, capability: "intelligence.opportunity.assess" },
     progress: { progress: 65 },
     result: null,
+    outcomeAttribution: {
+      schema: "bossai.manager-outcome-attribution.v1",
+      taskId: "manager-task-2",
+      resultRevision: 2,
+      generatedAt: "2026-08-05T00:01:00.000Z",
+      authority: "bossai-os",
+      kpiImpacts: [{
+        kpiRef: "goal-1",
+        label: "Qualified pipeline",
+        direction: "increase",
+        delta: 3,
+        unit: "leads",
+        sourceRef: "goal-observation:obs-1",
+      }],
+      businessValue: {
+        valueType: "realized_revenue",
+        amount: 1200,
+        currency: "USD",
+        method: "observed_source_system",
+        sourceRef: "business-system:order:order-1",
+      },
+      evidenceRefs: ["business-system:order:order-1", "goal-observation:obs-1"],
+      readOnly: true,
+      mutationPerformed: false,
+      persistedByBossAIWork: false,
+    },
     events: [{ type: "bossai.manager.task.progress" }],
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 
@@ -106,10 +132,58 @@ test("Manager detail maps execution and review state without fabricating externa
   assert.equal(run.progress, 65);
   assert.equal(run.requiresHumanReview, true);
   assert.equal(run.externalActionsExecuted, false);
+  assert.equal(run.outcomeAttribution?.schema, "bossai.manager-outcome-attribution.v1");
+  assert.equal(run.outcomeAttribution?.taskId, "manager-task-2");
+  assert.equal(run.outcomeAttribution?.businessValue?.amount, 1200);
+  assert.equal(run.outcomeAttribution?.readOnly, true);
   assert.deepEqual(await client.getRunEvents("manager-task-2"), {
     success: true,
     data: [{ type: "bossai.manager.task.progress" }],
   });
+});
+
+test("owner business-decision v2 support is declared publicly and exact reads use the separate read-only Workbench key", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  const calls: Array<{ url: string; authorization: string }> = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    calls.push({ url, authorization: new Headers(init?.headers).get("authorization") || "" });
+    if (url.endsWith("/health")) {
+      return new Response(JSON.stringify({
+        optionalContracts: {
+          ownerBusinessDecisionsV2: {
+            schemaVersion: "bossai.owner-business-decision-list.v2",
+            method: "GET",
+            path: "/api/owner/business-decisions/v2",
+          },
+        },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ success: true, data: {
+      schema: "bossai.owner-business-decision-list.v2",
+      generatedAt: "2026-08-20T09:00:00.000Z",
+      authority: "bossai-os",
+      decisions: [],
+      inferredDecisionsIncluded: false,
+      automaticExecutionAuthorized: false,
+      externalActionsExecuted: false,
+    } }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  const client = new BossAiOsClient({ baseUrl: "http://bossai.local", jwt: "employee-jwt", workbenchKey: "bossai_live_workbench_read" });
+  assert.equal(await client.ownerBusinessDecisionV2Supported(), true);
+  assert.deepEqual(await client.listOwnerBusinessDecisionsV2({
+    prospectId: "prospect-1",
+    intelligenceManagerTaskId: "manager-task-42",
+  }), []);
+  assert.equal(calls.length, 2);
+  const healthCall = calls[0]!;
+  const decisionCall = calls[1]!;
+  assert.equal(healthCall.authorization, "");
+  assert.equal(decisionCall.authorization, "Bearer bossai_live_workbench_read");
+  assert.notEqual(decisionCall.authorization, "Bearer employee-jwt");
+  assert.match(decisionCall.url, /subjectId=prospect-1/u);
+  assert.match(decisionCall.url, /contextId=manager-task-42/u);
 });
 
 test("employee delegation rejects wrong routing or a fake Manager response", async (context) => {

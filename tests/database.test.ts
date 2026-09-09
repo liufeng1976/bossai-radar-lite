@@ -124,6 +124,244 @@ test("persists runs, evidence, opportunities and reports", () => {
   }
 });
 
+test("refreshes persisted business website context on repeated scans", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "radar-lite-website-"));
+  const db = new RadarDatabase(directory);
+  const base = {
+    source: "website" as const,
+    externalId: "company-home",
+    title: "Acme Export",
+    body: "Industrial pumps for distributors.",
+    url: "https://acme.example/",
+    author: "Acme Export",
+    publishedAt: "2026-08-16T00:00:00.000Z",
+    engagement: 0,
+    query: "https://acme.example/",
+  };
+  try {
+    db.saveEvidence(scoreEvidence({
+      ...base,
+      websiteContext: {
+        schema: "bossai.business-website-context.v1",
+        rootUrl: base.url,
+        pageUrl: base.url,
+        companyName: "Acme Export",
+        description: "Industrial pumps.",
+        publicEmails: ["sales@acme.example"],
+        publicPhones: [],
+        contactUrls: ["https://acme.example/contact"],
+        productSignals: ["Industrial pumps"],
+        robotsUrl: "https://acme.example/robots.txt",
+        robotsPolicy: "allowed",
+        depth: 0,
+        crawledAt: "2026-08-16T00:00:00.000Z",
+      },
+    }));
+    db.saveEvidence(scoreEvidence({
+      ...base,
+      publishedAt: "2026-08-16T01:00:00.000Z",
+      websiteContext: {
+        schema: "bossai.business-website-context.v1",
+        rootUrl: base.url,
+        pageUrl: base.url,
+        companyName: "Acme Export",
+        description: "Industrial pumps and valve systems.",
+        publicEmails: ["export@acme.example"],
+        publicPhones: ["+1 555 0100"],
+        contactUrls: ["https://acme.example/contact"],
+        productSignals: ["Industrial pumps", "Valve systems"],
+        robotsUrl: "https://acme.example/robots.txt",
+        robotsPolicy: "allowed",
+        depth: 0,
+        crawledAt: "2026-08-16T01:00:00.000Z",
+      },
+    }));
+
+    const stored = db.listEvidence(10)[0]?.websiteContext;
+    assert.ok(stored);
+    assert.deepEqual(stored?.publicEmails, ["export@acme.example"]);
+    assert.deepEqual(stored?.publicPhones, ["+1 555 0100"]);
+    assert.ok(stored?.productSignals.includes("Valve systems"));
+    assert.equal(stored?.crawledAt, "2026-08-16T01:00:00.000Z");
+  } finally {
+    db.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("persists, refreshes and review-gates prospect candidates without creating CRM leads", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "radar-lite-prospect-"));
+  const db = new RadarDatabase(directory);
+  try {
+    const first = db.saveProspectCandidate({
+      id: "prospect-acme",
+      domain: "acme.example",
+      websiteUrl: "https://acme.example/",
+      companyName: "Acme",
+      description: "Industrial pumps",
+      discoverySourceUrl: "https://expo.example/exhibitors",
+      discoverySourceTitle: "Expo exhibitors",
+      discoveryQuery: "https://expo.example/exhibitors",
+      publicEmails: [],
+      publicPhones: [],
+      contactUrls: ["https://acme.example/contact"],
+      officialProfileUrls: ["https://www.linkedin.com/company/acme/"],
+      publicMessagingUrls: ["https://wa.me/15550100"],
+      productSignals: ["Industrial pumps"],
+      evidenceUrls: ["https://expo.example/exhibitors", "https://acme.example/"],
+      websiteEvidenceStatus: "unverified",
+      score: 62,
+      reasons: ["directory source"],
+      fitScore: 50,
+      fitTerms: ["industrial pumps", "distributor"],
+      fitMatches: ["industrial pumps"],
+      discoveredAt: "2026-08-16T12:00:00.000Z",
+    });
+    assert.equal(first.status, "DISCOVERED");
+    assert.equal(db.prospectStats().total, 1);
+    assert.equal(db.listLeads({ limit: 10 }).length, 0);
+
+    const reviewing = db.updateProspectStatus(first.id, "REVIEW_REQUIRED");
+    assert.equal(reviewing?.status, "REVIEW_REQUIRED");
+
+    const refreshed = db.saveProspectCandidate({
+      ...first,
+      publicEmails: ["sales@acme.example"],
+      publicPhones: ["+1 555 0100"],
+      officialProfileUrls: ["https://www.linkedin.com/company/acme/", "https://www.tiktok.com/@acme"],
+      publicMessagingUrls: ["https://wa.me/15550100", "https://wa.me/15550101"],
+      companyContactChannels: [
+        {
+          type: "email",
+          value: "sales@acme.example",
+          url: "mailto:sales@acme.example",
+          sourcePageUrl: "https://acme.example/contact",
+          sourceKind: "mailto",
+          businessRole: "sales",
+          confidence: "high",
+          verificationStatus: "official-site-observed",
+        },
+      ],
+      productSignals: ["Industrial pumps", "Export pumps"],
+      websiteEvidenceStatus: "verified",
+      websiteVerifiedAt: "2026-08-16T12:59:00.000Z",
+      score: 81,
+      reasons: ["directory source", "official website exposes public contacts"],
+      fitScore: 100,
+      fitTerms: ["industrial pumps", "export pumps"],
+      fitMatches: ["industrial pumps", "export pumps"],
+      discoveredAt: "2026-08-16T13:00:00.000Z",
+    });
+    assert.equal(refreshed.status, "REVIEW_REQUIRED");
+    assert.equal(refreshed.score, 81);
+    assert.deepEqual(refreshed.publicEmails, ["sales@acme.example"]);
+    assert.deepEqual(refreshed.officialProfileUrls, ["https://www.linkedin.com/company/acme/", "https://www.tiktok.com/@acme"]);
+    assert.deepEqual(refreshed.publicMessagingUrls, ["https://wa.me/15550100", "https://wa.me/15550101"]);
+    assert.equal(refreshed.companyContactChannels?.[0]?.businessRole, "sales");
+    assert.equal(refreshed.companyContactChannels?.[0]?.sourcePageUrl, "https://acme.example/contact");
+    assert.equal(refreshed.fitScore, 100);
+    assert.deepEqual(refreshed.fitMatches, ["industrial pumps", "export pumps"]);
+    assert.equal(refreshed.websiteEvidenceStatus, "verified");
+    assert.equal(refreshed.websiteVerifiedAt, "2026-08-16T12:59:00.000Z");
+    assert.equal(refreshed.firstSeenAt, "2026-08-16T12:00:00.000Z");
+    assert.equal(refreshed.lastSeenAt, "2026-08-16T13:00:00.000Z");
+
+    const rediscovered = db.saveProspectCandidate({
+      ...refreshed,
+      companyName: "Search Result Label",
+      description: "Search snippet only",
+      publicEmails: [],
+      publicPhones: [],
+      contactUrls: [],
+      officialProfileUrls: [],
+      publicMessagingUrls: [],
+      companyContactChannels: [],
+      productSignals: [],
+      evidenceUrls: ["https://search.example/result"],
+      websiteEvidenceStatus: "unverified",
+      websiteVerifiedAt: "",
+      reasons: ["search discovery only"],
+      fitScore: 0,
+      fitTerms: ["unrelated"],
+      fitMatches: [],
+      discoveredAt: "2026-08-16T14:00:00.000Z",
+    });
+    assert.equal(rediscovered.websiteEvidenceStatus, "verified");
+    assert.equal(rediscovered.websiteVerifiedAt, "2026-08-16T12:59:00.000Z");
+    assert.equal(rediscovered.companyName, "Acme");
+    assert.equal(rediscovered.description, "Industrial pumps");
+    assert.deepEqual(rediscovered.publicEmails, ["sales@acme.example"]);
+    assert.equal(rediscovered.companyContactChannels?.[0]?.value, "sales@acme.example");
+    assert.deepEqual(rediscovered.productSignals, ["Industrial pumps", "Export pumps"]);
+    assert.equal(rediscovered.fitScore, 100);
+    assert.equal(rediscovered.lastSeenAt, "2026-08-16T14:00:00.000Z");
+    assert.equal(db.prospectStats().reviewRequired, 1);
+    assert.equal(db.listLeads({ limit: 10 }).length, 0);
+  } finally {
+    db.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("migrates Sales delegation owner-decision lineage non-destructively and persists new bindings", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "radar-lite-sales-lineage-db-"));
+  const databasePath = path.join(directory, "radar-lite.sqlite");
+  const legacy = new DatabaseSync(databasePath);
+  legacy.exec(`
+    CREATE TABLE bossai_delegations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_record_id TEXT NOT NULL,
+      source_operation_id TEXT NOT NULL UNIQUE,
+      bossai_run_id TEXT NOT NULL UNIQUE,
+      bossai_agent_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      review_status TEXT NOT NULL,
+      submitted_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      result_imported_at TEXT,
+      error_code TEXT NOT NULL DEFAULT '',
+      error_message TEXT NOT NULL DEFAULT ''
+    );
+    INSERT INTO bossai_delegations (
+      source_type, source_record_id, source_operation_id, bossai_run_id, bossai_agent_id,
+      status, review_status, submitted_at, updated_at, error_code, error_message
+    ) VALUES (
+      'prospect-sales', 'legacy-prospect', 'legacy-sales-operation', 'legacy-sales-run', 'bossai-sales-agent',
+      'failed', 'approved', '2026-08-18T01:00:00.000Z', '2026-08-18T01:10:00.000Z', 'LEGACY_FAILED', 'legacy row'
+    );
+  `);
+  legacy.close();
+
+  const db = new RadarDatabase(directory);
+  try {
+    const legacyDelegation = db.getBossAiDelegationByOperation("legacy-sales-operation");
+    assert.ok(legacyDelegation);
+    assert.equal(legacyDelegation.ownerDecisionId, "");
+    assert.equal(legacyDelegation.bossaiRunId, "legacy-sales-run");
+
+    const bound = db.saveBossAiDelegation({
+      sourceType: "prospect-sales",
+      sourceRecordId: "bound-prospect",
+      sourceOperationId: "bound-sales-operation",
+      bossaiRunId: "bound-sales-run",
+      bossaiAgentId: "bossai-sales-agent",
+      status: "queued",
+      reviewStatus: "pending",
+      submittedAt: "2026-08-18T02:00:00.000Z",
+      updatedAt: "2026-08-18T02:00:00.000Z",
+      ownerDecisionId: "owner-decision-db-lineage",
+    });
+    assert.equal(bound.ownerDecisionId, "owner-decision-db-lineage");
+    assert.equal(db.getBossAiDelegationByRunId("bound-sales-run")?.ownerDecisionId, "owner-decision-db-lineage");
+    assert.equal(db.countBossAiDelegations(), 2);
+    assert.equal(db.listBossAiDelegations(1).length, 1);
+  } finally {
+    db.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("upgrades a v0.1 database with demo columns without destructive reset", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "radar-lite-legacy-"));
   const databasePath = path.join(directory, "radar-lite.sqlite");
