@@ -10,6 +10,33 @@
 
 BossAI Radar Lite is the **source-available, non-commercial edition** of BossAI Radar. It is both an installable Agent intelligence Skill and an evidence-backed opportunity validation tool.
 
+## Lite vs commercial BossAI
+
+| Need | Radar Lite | Commercial BossAI / Pro |
+|---|---|---|
+| Local public-source collection, deterministic scoring and CEO briefs | ✅ | ✅ |
+| Agent Skill, local MCP and GitHub self-install | ✅ | ✅ |
+| Single-admin local SQLite and human-reviewed lead workflow | ✅ | ✅ |
+| Commercial internal use, customer delivery or white-label operation | Separate commercial authorization required | ✅ |
+| Team identity, tenant isolation, enterprise data sources, managed hosting/SLA | — | ✅ |
+| Persistent Intelligence Employee execution | Delegates through BossAI OS | ✅ governed by BossAI OS |
+| Runtime, Approval/Audit, Memory, AI Gateway or Billing authority | Not owned here | BossAI OS / Headquarters Commerce |
+
+See [`docs/LITE_VS_PRO_EN.md`](docs/LITE_VS_PRO_EN.md) for the product split and [`docs/PUBLIC_RELEASE.md`](docs/PUBLIC_RELEASE.md) for the public-release and platform boundary.
+
+### From intelligence to execution
+
+Radar Lite answers “what is worth doing first.” Once evidence is strong enough, pass `top_opportunities` to [BossAI Ecommerce Manager Skill](https://github.com/liufeng1976/bossai-ecommerce-ai-team-skill) for a seven-day execution pack. For order questions, delivery, refund, after-sales or multi-brand support workflows, evaluate [BossAI Customer Service Agent](https://github.com/liufeng1976/bossai-commerce-copilot) for local facts and mandatory human review. None of these repositories duplicates the BossAI OS Runtime.
+
+Before preparing a public release candidate:
+
+```bash
+npm run verify:public-release
+npm run release:check
+```
+
+A passing result is packaging and technical evidence only. It is not proof of public launch, production readiness, commercial validation, or real-user validation.
+
 ## Give the Repository Directly to an Agent
 
 Send this URL to OpenClaw, Hermes, Claude Code, or Codex:
@@ -370,6 +397,33 @@ RADAR_REDDIT_CONTEXT_COMMUNITIES=3
 RADAR_TOPICS=AI ecommerce,Shopify automation,Amazon seller tools,customer support AI,content automation
 RADAR_ARXIV_CATEGORIES=cs.AI,cs.CL,cs.LG
 RADAR_RSS_FEEDS=https://news.ycombinator.com/rss;https://export.arxiv.org/rss/cs.AI
+RADAR_WEBSITE_SEEDS=
+RADAR_WEBSITE_MAX_PAGES_PER_SEED=5
+RADAR_WEBSITE_MAX_DEPTH=1
+RADAR_WEBSITE_CONCURRENT_SEEDS=4
+RADAR_WEBSITE_RESPECT_ROBOTS=true
+RADAR_PROSPECT_DISCOVERY_SEEDS=
+RADAR_PROSPECT_DISCOVERY_MAX_PAGES_PER_SEED=3
+RADAR_PROSPECT_DISCOVERY_MAX_DEPTH=1
+RADAR_PROSPECT_DISCOVERY_CONCURRENT_SEEDS=3
+RADAR_PROSPECT_DISCOVERY_MAX_CANDIDATES_PER_SEED=20
+RADAR_PROSPECT_DISCOVERY_MIN_SCORE=45
+RADAR_PROSPECT_ICP_TERMS=
+RADAR_PROSPECT_VERIFY_MAX_WEBSITES_PER_SCAN=20
+RADAR_PROSPECT_SEARCH_PROVIDER=disabled
+RADAR_PROSPECT_SEARCH_QUERIES=
+RADAR_PROSPECT_SEARCH_MAX_RESULTS_PER_QUERY=10
+RADAR_PROSPECT_SEARCH_CONCURRENT_QUERIES=2
+RADAR_PROSPECT_SEARCH_COUNTRY=US
+RADAR_PROSPECT_SEARCH_LANGUAGE=en
+BRAVE_SEARCH_API_KEY=
+RADAR_PROSPECT_MAP_PROVIDER=disabled
+RADAR_PROSPECT_MAP_QUERIES=
+RADAR_PROSPECT_MAP_MAX_RESULTS_PER_QUERY=10
+RADAR_PROSPECT_MAP_CONCURRENT_QUERIES=2
+RADAR_PROSPECT_MAP_REGION_CODE=US
+RADAR_PROSPECT_MAP_LANGUAGE_CODE=en
+GOOGLE_PLACES_API_KEY=
 
 AI_PROVIDER=deterministic
 AI_BASE_URL=https://api.deepseek.com
@@ -388,6 +442,46 @@ RADAR_SKILL_ALLOW_SCAN=false
 RADAR_SKILL_ALLOW_LEAD_WRITE=false
 RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 ```
+
+`RADAR_WEBSITE_SEEDS` accepts semicolon- or newline-separated public business websites for foreign-trade/company research. The collector is disabled until seeds are configured. It stays on the configured website host, applies bounded pages and depth, honors `robots.txt` by default, follows same-site Sitemap declarations plus a bounded `/sitemap.xml` fallback, validates SSRF and redirects, caps response sizes, skips login/account/cart/checkout and common document/media paths, and never bypasses authentication, CAPTCHAs or access controls. It preserves public company/product/contact evidence, JSON-LD `contactPoint`, official-site-linked company profile URLs and public WhatsApp Business channels for review; it does not send outreach. LinkedIn personal `/in/` profiles are excluded from company-profile evidence. Sparse JavaScript app shells are marked `javascript-likely` so missing static evidence is not misrepresented as missing business information.
+
+`RADAR_PROSPECT_DISCOVERY_SEEDS` accepts explicitly configured public company directories, exhibition/exhibitor pages, association member pages and supplier directories. Radar reads the discovery site only within bounded same-site pages, extracts likely external company websites, filters search/social/payment/site-builder/large-marketplace hosts, then sends candidate websites through the bounded business-site collector for verification. Candidate scores rank public evidence strength; they are not purchase or close probabilities. `prospect_candidates` now persist `websiteEvidenceStatus=unverified|verified|static-incomplete` plus `websiteVerifiedAt`: search/map/directory discovery alone stays `unverified`; successful bounded website collection becomes `verified`; a JavaScript shell becomes `static-incomplete`. A later unverified rediscovery cannot downgrade the status or erase already verified company/contact/product evidence. The UI gives `unverified` candidates a Verify Website recovery action rather than an Intelligence action, and the backend fails closed with `PROSPECT_WEBSITE_EVIDENCE_REQUIRED` before any Manager task is created. `static-incomplete` may enter Intelligence for evidence review but remains blocked by `BLOCKED_PENDING_BROWSER_OR_ALTERNATE_EVIDENCE`. Only an authoritative Intelligence result containing `READY_FOR_SALES_QUALIFICATION_REVIEW` plus explicit human `READY_FOR_SALES` may create a `bossai-sales-agent` `sales.lead.qualify` task; the Sales-readiness patch rechecks website evidence for legacy records. Sales completion still does not auto-create/mutate CRM or send outreach.
+
+Terminal owner account decisions are now recorded through the Owner Decision Journal inside Account Review rather than by a bare status change. `POST /api/admin/prospects/:id/owner-decision` accepts only `approve-sales` / `reject-prospect`, requires a decision-compatible reason, requires an explanation for `other`, and stores the reason/note together with a private bounded snapshot of website evidence, review-material completion, company business-channel count, historical trade count/human-review priority, Radar candidate evidence score and Intelligence/Sales Manager references. The journal row and existing `ProspectCandidate.status` transition are committed in one transaction; a stale state writes neither. Direct `PATCH READY_FOR_SALES/REJECTED` fails with `PROSPECT_OWNER_DECISION_REQUIRED`. The journal is audit context, not another approval engine or CRM stage, and it does not mean purchase intent, close probability or a predicted next order. Public `/api/prospects` does not expose owner notes or decision snapshots.
+
+After Sales qualification completes, Account Review now reads the authoritative BossAI Manager result through `GET /api/admin/prospects/:id/sales-handoff-brief` and derives a non-persistent `bossai.prospect-sales-handoff-brief.v1`. It parses only explicit Sales Agent disposition markers, website-evidence state and Need/Authority/Timing/Budget lines. `UNKNOWN` stays unknown; non-UNKNOWN text is labelled only as evidence reported by Sales and is not promoted to owner-verified fact. Unknown future formats fall back to the raw Manager result. The Handoff Brief authorizes no outreach or CRM write and does not generate purchase intent, close probability or a next-purchase date.
+
+Failed or cancelled Intelligence/Sales Manager tasks now appear in a distinct Execution Exception category rather than ordinary ready-to-advance work. Account Review shows the original Manager Task plus its error code/message and separates “refresh current state” from “manual retry.” Nothing retries automatically: only an explicit owner retry of the latest failed/cancelled task can reuse the existing `/delegate` or `/qualify` path to create one new governed Manager Task. Radar owns a deterministic retry operation ID derived from the failed Task ID, so repeated clicks read back the same retry task instead of creating a retry storm. This adds no retry scheduler or loop and performs no CRM write, customer message or outreach.
+
+Sales qualification now also requires a complete `Intelligence Manager Task → owner approve-sales Decision → Sales Manager Task` authorization lineage; `READY_FOR_SALES` status alone is no longer executable authority. Every newly created `prospect-sales` delegation persists the exact `ownerDecisionId`, while the Manager context carries the Decision ID, decision time, bounded reason code and predecessor Intelligence Task. The owner's free-form private note is not copied into the Sales execution context. Legacy READY records with no owner decision, a decision tied to a different Intelligence Task, or an unbound/mismatched Sales task enter `Sales authorization needs confirmation` and fail closed. The owner must re-read the current authoritative Intelligence result and explicitly reconfirm Sales authorization; Radar then journals a new approval and permits only a fresh Sales task bound to that approval. Legacy Sales tasks are never silently backfilled or rewritten. This authorization permits `sales.lead.qualify` only; it does not authorize outreach, CRM writes, quotes, price changes, contracts, or payments.
+
+P9 extends that chain with governed `Decision → Sales → Outcome` attribution without treating Sales completion as a sale or revenue. A completed Sales Manager result starts as `REPORTED` evidence only; even if the employee text claims “$100,000 of value,” Radar preserves it only as bounded reported text and never converts it into a numeric business value. The owner must explicitly choose Confirm Outcome, Continue Observing, or No Business Value in Account Review to append a `bossai.prospect-outcome-review.v1` record. An optional monetary value can be entered only by the owner when confirming an outcome and is labelled `owner-entered`. Every review binds the current Sales Manager Task plus the P8 Owner Decision, and the SQLite write rechecks that this Sales task is still the latest, completed, and bound to the same approval so an older judgment cannot leak into a newer Sales run. Prospect Candidates now includes a Business Outcomes summary that aggregates only owner-entered confirmed amounts. Public `/api/prospects` exposes none of the private outcome notes, snapshots, or business-value amounts.
+
+P10 adds read-only `bossai.prospect-outcome-learning.v1` Outcome Learning on top of P9. It admits a historical sample only when the latest Sales Manager Task is completed and still bound to the current valid P8 Owner Decision; a P9 review counts only when both its Sales Task ID and Owner Decision ID match that current lineage. Prospect Candidates renders four restrained descriptive views: discovery source, website evidence method, company business-channel role, and ICP lexical-coverage bucket. Cohorts expose only sample count plus confirmed / no-value / observing / awaiting counts. Cohorts below the fixed minimum return `insufficient-sample` and the UI says that no judgment is formed; Radar never emits a best source, winning channel, or most-likely-to-close account. Optional monetary aggregation includes only values manually entered by the owner on `confirm-outcome`, grouped by explicit currency; employee monetary claims and no-value judgments never become Revenue or ROI. P10 does not mutate `ProspectCandidate.score`, ICP/Sales qualification, CRM state, or Manager tasks, calls no model, and produces no close probability, purchase-intent inference, or next-purchase prediction. Public `/api/prospects` exposes none of the private P10 aggregation or owner-entered value.
+
+P10.1 carries that review back into single-account Account Review with read-only `bossai.prospect-outcome-learning-membership.v1`. It explains why the current account belongs to its Outcome Learning cohorts using only existing facts: discovery source, website-evidence method/status, public company-level business-channel roles, ICP lexical-coverage bucket, and whether the current Sales Task is eligible for the P10 sample because it is completed and still bound to the valid P8 authorization lineage. Incomplete Sales, invalid authorization lineage, or a Sales-task lineage mismatch is explicitly labelled as excluded from the result sample. This creates no new score, stage, recommendation, purchase-intent inference, close probability, or causal explanation.
+
+P10.2 completes that single-account explanation by showing exactly how the current account contributes to the Outcome Learning sample: `confirmed / no-value / observing / awaiting-owner-review / excluded`. The contribution state reuses only the exact current `Sales Manager Task ID + Owner Decision ID` P8/P9 lineage. A valid latest completed Sales task with no matching current P9 review contributes only `awaiting-owner-review`; historical reviews from older Sales tasks or older Owner Decisions cannot leak into the newer contribution state. `excluded` means the account is outside the current sample, not that it received a negative score. None of these states is Revenue, ROI, close probability, purchase intent, or a causal judgment.
+
+P10.3 closes the next-action gap after the boss sees Outcome Learning. The panel now shows whether the current eligible sample count has reached the fixed minimum descriptive threshold, and the business-channel view explicitly warns that one account may belong to multiple channel-role cohorts so those counts must not be summed as unique accounts. When result-review work exists, Outcome Learning exposes a direct Review Pending Outcomes action and the awaiting/observing Business Outcome cards open the same existing `result-review` Owner Queue rather than creating another workflow. Owner Queue attention filtering is now sent to the server before the current bounded 500-record read, preventing unrelated higher-priority items from occupying a mixed result slice and hiding matching result-review accounts.
+
+P10.4 closes integrity, privacy, and reachability gaps around that review path. Actions that can change P8/P9/P10 truth now refresh Business Outcomes, Outcome Learning, and Owner Queue together. P9/P10 choose the current matching review internally by `reviewedAt DESC + id DESC` instead of trusting caller journal order. Owner Queue initially shows 10 records and Prospect Candidates 12, but both can progressively reveal their bounded result sets; prospect loading remains capped at 500. All administrator routes return `Cache-Control: no-store, private` plus `Pragma: no-cache`. The global BossAI delegation list remains bounded to 200 and now reports `totalCount/truncated`; when history coverage is incomplete, absence from the list is treated as unknown rather than proof of no prior task, so direct duplicate Intelligence/Sales submission is withheld until Account Review resolves the account-specific authoritative state.
+
+P10.5 closes the path from a portfolio cohort back to the underlying sample evidence. Every non-empty cohort can use administrator-only, read-only `bossai.prospect-outcome-learning-drilldown.v1` to list accounts that still satisfy the current P8/P9 governed lineage and then open Account Review for source, website-evidence, channel, Sales/Owner Decision, and outcome-review facts. Drill-down returns only prospect ID, company name, domain, and current contribution state, ordered alphabetically by company name. It does not return owner Outcome Review notes, owner-entered business-value amounts, or employee value claims, and it does not rank by candidate score, value, close probability, or purchase intent. Any P8/P9/P10 truth refresh clears the current drill-down so an updated portfolio view cannot remain paired with a stale sample list. No new stage, Manager task, CRM record, model call, or outreach action is created.
+
+P10.6 makes each cohort's `confirmed / no-value / observing / awaiting` count directly verifiable. A non-zero count reuses the same read-only drill-down with `state=confirmed|no-value|observing|awaiting-owner-review`, returning only currently governed accounts in that exact contribution state while preserving `cohortSampleCount` as the unfiltered denominator. Zero counts remain plain labels; unknown state values fail closed with `HTTP 400 / OUTCOME_LEARNING_STATE_INVALID`. The filtered list remains alphabetical and still excludes owner notes, owner-entered business-value amounts, employee monetary claims, ranking, probability, CRM, Manager tasks, model calls, and outreach.
+
+P10.7 closes dashboard read-race failure modes. Manual refresh, post-scan quiet refresh, rapid Owner Queue filter changes, repeated Outcome Learning cohort/state clicks, and outcome-truth refreshes may overlap; the browser now uses an executable-test-backed `latest-request` gate so only the newest response or error may write back to UI state. An older dashboard batch cannot overwrite newer overview/prospect state, stale trade/delegation/outcome/queue reads are ignored, and truth refresh explicitly invalidates any in-flight drill-down so an old sample list cannot reappear after refreshed cohort truth. This controls browser read-result ordering only and creates no task, state machine, scheduler, CRM authority, Manager authority, or business inference.
+
+P10.8 extends the same race protection to the authoritative Account Review surface. When accounts are opened rapidly from different queues or Outcome Learning samples, only the newest account-detail request may update the dialog; closing Account Review invalidates any in-flight detail request so a slow response cannot reopen stale content. Reloading or switching accounts also invalidates any older BossAI Manager result read, preventing an employee result from account A from appearing inside account B. Stale failures are ignored as well, so they cannot overwrite the newest healthy view with an obsolete error. Server-side Account Review, Manager, approval, CRM, and outcome authorities remain unchanged.
+
+Optional Web discovery uses the official Brave Web Search JSON API rather than scraping Google/Bing search-result HTML. It is enabled only with `RADAR_PROSPECT_SEARCH_PROVIDER=brave` plus the server-side `BRAVE_SEARCH_API_KEY`; the key is never exposed through public config or browser code. Optional map discovery uses Google Places Text Search (New) only when `RADAR_PROSPECT_MAP_PROVIDER=google_places` and a server-side `GOOGLE_PLACES_API_KEY` are configured. Radar requests only place ID, display name, formatted address, types, and website URI, then verifies the official site through the normal crawler. Google Places API billing may apply, so this provider is disabled by default. `RADAR_PROSPECT_SEARCH_QUERIES` and `RADAR_PROSPECT_MAP_QUERIES` control recurring scans. A one-off target-company description from the Prospect Candidates UI runs every configured Web/map provider in parallel, merges results by domain, and then performs one common official-site verification flow. Results are bounded to at most 20 per provider query (10 by default), query concurrency defaults to 2, website seeds to concurrency 4, directory seeds to concurrency 3, and each scan verifies at most `RADAR_PROSPECT_VERIFY_MAX_WEBSITES_PER_SCAN` candidate websites (20 by default). Only one manual prospect-discovery request runs at a time per Radar process.
+
+`RADAR_PROSPECT_ICP_TERMS` declares explicit owner-defined ICP phrases separated by semicolons or newlines, for example `pet supplies;smart feeder;distributor`. Radar computes lexical coverage only after official-site verification, using the company name, public site description, and product/service signals. ICP website coverage stays separate from evidence-strength scoring and must never be interpreted as purchase intent, budget, pipeline stage, or close probability.
+
+The Prospect Candidates entry also exposes one-shot search-direction expansion. Without the AI Gateway it uses a deterministic company-role matrix; with `AI_PROVIDER=bossai-gateway` it may use the BossAI Central AI Gateway to propose 6–8 company-level search directions. Planning never starts collection automatically: the owner chooses a direction before Web/Maps discovery runs. Recurring prospect discovery also reports per-channel status for `public directories / Web search / Maps`, including success/partial/failure/disabled state, candidate count, error count and duration.
+
+Trade/customs data uses a separate `trade_records` evidence pool. The owner can import authorized CSV/TSV data; Radar maps buyer/importer/supplier/exporter, country, product, HS code, date, quantity, amount, currency and optional website. Personal email/phone columns are not stored in this model. The UI first calls `/api/admin/trade-records/preview`, which performs a no-write parse and returns inferred mapping, warnings, important missing fields, source columns intentionally ignored by the model, and bounded company-level samples; only explicit confirmation persists the current file. Trade evidence can be filtered by company/product/source text, HS prefix, role, country and date range. Company summaries are keyed by `company name + country/region`, preventing same-name US/CA histories, amounts or websites from being mixed. They describe observed history only: first/latest dates, dated sample count, median/min/max observed intervals when enough dates exist, `insufficient / single-gap / regular / variable` historical cadence, recency, product/HS coverage, amounts by currency and website state. `REVIEW_FIRST / REVIEW_SOON / REVIEW_LATER` orders human inspection only. There is no `intentScore`, `purchaseProbability` or `nextPurchaseDate`, and repeated history never establishes current need, budget, authority or close probability. Import never auto-creates prospects or CRM records. A single record may be explicitly promoted after bounded website verification; a company summary may also explicitly group one `company name + country/region` identity into one candidate and privately link all selected history without boosting the candidate's base score. Same-name multi-country data must be disambiguated, multiple historical website domains require human selection, and missing websites require explicit resolution. Record/company resolvers expose only domains that actually produced protected `websiteContext` evidence; failed domains are never offered as verified choices and no first result is auto-accepted. Public `/api/prospects` responses do not expose private historical amount/quantity/source metadata. Intelligence may receive at most eight linked historical records, and the same bounded reviewed history reaches `sales.lead.qualify` only after authoritative Intelligence readiness plus human `READY_FOR_SALES`. Intelligence and Sales both defensively reject unverified website facts. Historical trade facts remain history and are never converted into current purchase intent, budget, authority, predicted next order or close probability.
 
 Before public deployment:
 
@@ -409,6 +503,20 @@ See [SECURITY.md](SECURITY.md).
 | GET | `/api/health` | Service, version and license status |
 | GET | `/api/overview` | Statistics, schedule and latest report |
 | GET | `/api/opportunities` | Opportunity list |
+| GET | `/api/prospects` | Prospect-candidate list, isolated from formal CRM leads |
+| POST | `/api/admin/prospects/plan` | One-shot company-level search-direction expansion; never starts collection or writes CRM |
+| POST | `/api/admin/prospects/discover` | Admin-protected target-company discovery through configured Web/Maps APIs plus bounded official-site verification; never writes CRM |
+| GET | `/api/admin/trade-records` | Read/filter local trade evidence and company-level historical summaries; cadence only orders human review |
+| POST | `/api/admin/trade-records/preview` | No-write CSV/TSV mapping preview with missing fields, ignored source columns and bounded samples |
+| POST | `/api/admin/trade-records/import` | Confirm import of authorized CSV/TSV trade records with deduplication and no prospect/CRM creation |
+| POST | `/api/admin/trade-records/:id/resolve-website` | Explicitly search and verify candidate websites for one unresolved trade record; returns verified suggestions only |
+| POST | `/api/admin/trade-records/:id/prospect` | Verify a selected website and explicitly create a single-record prospect candidate; Intelligence review is still required |
+| POST | `/api/admin/trade-companies/resolve-website` | Resolve/verify a company website by company name + country/region; multiple choices require a human selection |
+| POST | `/api/admin/trade-companies/prospect` | After identity/website disambiguation, create a company-level candidate and privately link that identity's history without an intent-score boost |
+| POST | `/api/admin/prospects/:id/verify-website` | Explicitly verify the website of an `unverified` search/map/directory prospect without creating an employee task or CRM record |
+| PATCH | `/api/admin/prospects/:id` | Human-controlled review status; `READY_FOR_SALES` requires verified website evidence and an authoritative Intelligence handoff marker |
+| POST | `/api/admin/prospects/:id/delegate` | Delegate verified/static-incomplete public evidence to Intelligence; `unverified` fails closed and no CRM lead is created |
+| POST | `/api/admin/prospects/:id/qualify` | For a human-approved `READY_FOR_SALES` candidate only, create a `bossai-sales-agent` / `sales.lead.qualify` Manager task without writing CRM |
 | GET | `/api/evidence` | Evidence list |
 | GET | `/api/runs` | Scan history |
 | GET | `/api/report/latest` | Latest report JSON |

@@ -10,6 +10,24 @@
 
 BossAI Radar Lite 是 BossAI Radar 的 **source-available 非商业版**。它既是 Agent 可安装的情报晨报 Skill，也是带证据链的商业机会验证工具。
 
+## 先看清楚 Lite 和商业版的边界
+
+| 需求 | Radar Lite | BossAI 商业版 / Pro |
+|---|---|---|
+| 本机采集公开来源、确定性评分、CEO 日报 | ✅ | ✅ |
+| Agent Skill / 本地 MCP / GitHub 自安装 | ✅ | ✅ |
+| 单管理员、本地 SQLite、人工审核线索 | ✅ | ✅ |
+| 企业内部营利用途、客户交付、白标 | 需商业授权 | ✅ |
+| 团队权限、租户隔离、企业数据源、托管/SLA | — | ✅ |
+| 持久化 Intelligence Employee 执行 | 通过 BossAI OS 交接 | ✅ BossAI OS 治理 |
+| Runtime、Approval、Audit、Memory、AI Gateway、Billing 权威 | 不在本仓库 | BossAI OS / Headquarters Commerce |
+
+完整能力差异见 [`docs/LITE_VS_PRO.md`](docs/LITE_VS_PRO.md)，公开发布与平台边界见 [`docs/PUBLIC_RELEASE.md`](docs/PUBLIC_RELEASE.md)。
+
+### 从情报到执行
+
+Radar Lite 负责先找到“值得做什么”。当机会证据足够后，可以把 `top_opportunities` 交给 [BossAI 电商总管 Skill](https://github.com/liufeng1976/bossai-ecommerce-ai-team-skill) 生成7天执行包；如果问题集中在订单咨询、物流、退款、售后或多品牌客服，则可进一步评估 [BossAI Customer Service Agent](https://github.com/liufeng1976/bossai-commerce-copilot) 的本地事实层与强制人工审核工作流。三个仓库都不复制 BossAI OS Runtime。
+
 ## 直接交给 Agent 安装
 
 把这个地址发给 OpenClaw、Hermes、Claude Code 或 Codex：
@@ -49,6 +67,15 @@ BUILD / SELL_SERVICE / WATCH / IGNORE
     ↓
 目标客户、建议报价与 7 天行动计划
 ```
+
+公开发布候选在提交前可运行：
+
+```bash
+npm run verify:public-release
+npm run release:check
+```
+
+通过只表示当前源码包装和现有技术检查符合发布候选要求，不等于已经公开上线、生产就绪或经过真实付费客户验证。
 
 ## 为什么做 Lite
 
@@ -342,6 +369,33 @@ RADAR_REDDIT_CONTEXT_COMMUNITIES=3
 RADAR_TOPICS=AI ecommerce,Shopify automation,Amazon seller tools,customer support AI,content automation
 RADAR_ARXIV_CATEGORIES=cs.AI,cs.CL,cs.LG
 RADAR_RSS_FEEDS=https://news.ycombinator.com/rss;https://export.arxiv.org/rss/cs.AI
+RADAR_WEBSITE_SEEDS=
+RADAR_WEBSITE_MAX_PAGES_PER_SEED=5
+RADAR_WEBSITE_MAX_DEPTH=1
+RADAR_WEBSITE_CONCURRENT_SEEDS=4
+RADAR_WEBSITE_RESPECT_ROBOTS=true
+RADAR_PROSPECT_DISCOVERY_SEEDS=
+RADAR_PROSPECT_DISCOVERY_MAX_PAGES_PER_SEED=3
+RADAR_PROSPECT_DISCOVERY_MAX_DEPTH=1
+RADAR_PROSPECT_DISCOVERY_CONCURRENT_SEEDS=3
+RADAR_PROSPECT_DISCOVERY_MAX_CANDIDATES_PER_SEED=20
+RADAR_PROSPECT_DISCOVERY_MIN_SCORE=45
+RADAR_PROSPECT_ICP_TERMS=
+RADAR_PROSPECT_VERIFY_MAX_WEBSITES_PER_SCAN=20
+RADAR_PROSPECT_SEARCH_PROVIDER=disabled
+RADAR_PROSPECT_SEARCH_QUERIES=
+RADAR_PROSPECT_SEARCH_MAX_RESULTS_PER_QUERY=10
+RADAR_PROSPECT_SEARCH_CONCURRENT_QUERIES=2
+RADAR_PROSPECT_SEARCH_COUNTRY=US
+RADAR_PROSPECT_SEARCH_LANGUAGE=en
+BRAVE_SEARCH_API_KEY=
+RADAR_PROSPECT_MAP_PROVIDER=disabled
+RADAR_PROSPECT_MAP_QUERIES=
+RADAR_PROSPECT_MAP_MAX_RESULTS_PER_QUERY=10
+RADAR_PROSPECT_MAP_CONCURRENT_QUERIES=2
+RADAR_PROSPECT_MAP_REGION_CODE=US
+RADAR_PROSPECT_MAP_LANGUAGE_CODE=en
+GOOGLE_PLACES_API_KEY=
 
 AI_PROVIDER=deterministic
 AI_BASE_URL=https://api.deepseek.com
@@ -363,6 +417,46 @@ RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 
 `GITHUB_TOKEN` 不是必需项，但可提高 GitHub 公共搜索限额。`RADAR_RSS_FEEDS` 使用分号或换行分隔，最多配置 30 个公开 Feed。`RADAR_REDDIT_CONTEXT_COMMUNITIES` 控制每轮最多补充多少个 subreddit 的 Sidebar/About、公开版规与置顶帖上下文；设为 `0` 可关闭。成功上下文缓存 24 小时，失败结果仅缓存 15 分钟。
 
+`RADAR_WEBSITE_SEEDS` 是面向外贸/企业研究的公开网站种子列表，使用分号或换行分隔。配置后，Radar 只在种子同站点内按 `RADAR_WEBSITE_MAX_PAGES_PER_SEED` 和 `RADAR_WEBSITE_MAX_DEPTH` 的上限做有界采集；默认读取并遵守 `robots.txt`，支持 robots 中声明的 Sitemap 以及有界同站点 `/sitemap.xml` fallback，持续执行 SSRF/重定向/响应体大小保护，跳过登录、注册、账户、购物车、结账及常见文档/媒体路径，不绕过验证码、登录或访问控制。采集结果保留企业名称、页面描述、产品/服务信号、公开联系页、页面/JSON-LD 公开展示的业务邮箱/电话、官网主动链接的公司级外部主页及 WhatsApp Business 等公开业务渠道，并作为带来源 URL 的证据进入 Radar，而不是直接发送销售消息。LinkedIn 个人 `/in/` 等个人档案不会进入公司级主页证据。静态 HTML 疑似只是 JavaScript 壳时会标记 `javascript-likely`，不会把“静态抓不到”解释成“企业没有这些信息”。
+
+`RADAR_PROSPECT_DISCOVERY_SEEDS` 用于潜客发现，适合显式配置公开企业名录、展会展商页、协会会员页和供应商目录。Radar 只在发现源同站点做有界读取，从页面抽取站外企业官网候选，过滤搜索、社交、支付、建站和大型市场平台域名，再把候选官网交给企业网站爬虫二次核验。候选按公开来源、企业标签、商业上下文和官网证据做确定性排序；排序分不是采购概率。`prospect_candidates` 现在显式保存 `websiteEvidenceStatus=unverified|verified|static-incomplete` 和 `websiteVerifiedAt`：搜索/地图/名录只发现 URL 时保持 `unverified`；真实受控官网采集成功才升级成 `verified`，JavaScript 壳页则记为 `static-incomplete`。后续纯搜索再次发现同一域名不能把已核验状态或已核验的企业名称、描述、公开联系方式、产品信号覆盖回空值。`unverified` 候选在 UI 只提供“核验官网”，后端也会在创建 Manager 任务前以 `PROSPECT_WEBSITE_EVIDENCE_REQUIRED` 阻断 Intelligence。`static-incomplete` 可交情报员工判断证据缺口，但必须保持 `BLOCKED_PENDING_BROWSER_OR_ALTERNATE_EVIDENCE`。只有 Intelligence Manager 权威结果明确包含 `READY_FOR_SALES_QUALIFICATION_REVIEW`，并且人工明确批准 `READY_FOR_SALES` 后，才允许创建 `bossai-sales-agent` 的 `sales.lead.qualify` Manager 任务；`READY_FOR_SALES` 还会再次检查官网证据状态。即使 Sales 资格判断完成，Radar 仍不会自动创建或修改 CRM 正式记录、发送邮件或进行任何外联。
+
+老板的终局账户决策现在通过 Account Review 内的“老板决策留痕”完成，而不是直接修改状态。`POST /api/admin/prospects/:id/owner-decision` 只接受 `approve-sales` / `reject-prospect`，要求选择与决策匹配的理由，`other` 必须补充说明，并把理由、说明和当时的官网证据、审查材料完成度、公司业务渠道数量、历史贸易数量/人工复核顺序、Radar 候选证据分、Intelligence/Sales Manager 引用保存为私有决策快照。决策日志和原有 `ProspectCandidate.status` 在同一事务中写入；状态过期时两者都不写。直接 `PATCH READY_FOR_SALES/REJECTED` 会以 `PROSPECT_OWNER_DECISION_REQUIRED` 失败。决策记录用于审计，不是新的审批引擎或 CRM 阶段，也不表示购买意图、成交概率或下一单预测；公开 `/api/prospects` 不返回老板备注或决策快照。
+
+Sales 资格判断完成后，Account Review 的“查看销售资格结果”会通过 `GET /api/admin/prospects/:id/sales-handoff-brief` 实时读取 BossAI Manager 权威结果并生成不落库的 `bossai.prospect-sales-handoff-brief.v1`。它只解析 Sales Agent 明确写出的处置标记、官网证据状态以及真实需求/决策权/采购时间/预算字段：`UNKNOWN/未知` 继续保持未知，非 UNKNOWN 内容只标记为“Sales 结果报告的证据”，不会自动升级成老板已验证事实；无法识别的未来格式直接回退为原始 Manager 结果。Handoff Brief 不授权任何外联或 CRM 写入，也不生成购买意图、成交概率或下一次采购日期。
+
+Intelligence 或 Sales Manager 任务失败/取消后，现在会进入老板队列独立的“执行异常”类别，而不是混在普通“可立即推进”中。Account Review 会显示原 Manager Task、错误码/错误说明，并把“刷新现有状态”和“人工重试”分成两个动作。重试不会自动发生：只有老板显式重试最新失败/取消任务时，Radar 才复用现有 `/delegate` 或 `/qualify` 路径创建一个新的受治理 Manager Task；重试 operation ID 由失败 Task ID 决定并由服务端管理，重复点击只读回同一个重试任务。该机制不新增调度器或重试循环，也不会创建 CRM、发送消息或执行外联。
+
+Sales 资格判断现在还必须具备完整的“Intelligence Manager Task → 老板 approve-sales Decision → Sales Manager Task”授权链，`READY_FOR_SALES` 状态本身不再足以触发 Sales。每条新 `prospect-sales` 委派都会持久化精确的 `ownerDecisionId`，并把 Decision ID、时间、理由码及其对应的前置 Intelligence Task 作为受限上下文送入 BossAI Manager；老板的自由文本私有备注不会进入 Sales 执行上下文。历史 READY 数据如果没有老板决策、决策对应了别的 Intelligence Task，或已有 Sales Task 没有绑定 Decision，会进入“Sales 授权待确认”并 fail-closed；老板必须重新阅读当前权威 Intelligence 结果并显式“重新确认 Sales 授权”，系统才会新增一条批准记录并允许创建新的、绑定该批准的新 Sales Task。旧 Sales Task 不会被静默回填或改写。这条授权只允许 `sales.lead.qualify`，不授权外联、CRM 写入、报价、改价、签约或收款。
+
+P9 在这条授权链之后新增“Decision → Sales → Outcome”经营结果归因，但不会把 Sales 完成当成成交或收入。完成的 Sales Manager 结果首先只是 `REPORTED` 证据；即使员工正文写着“创造 10 万美元价值”，Radar 也只保留为受限报告文本，不自动提取成金额。只有老板在 Account Review 里显式选择“确认结果有效 / 继续观察 / 结果无价值”才会追加一条 `bossai.prospect-outcome-review.v1` 结果复核；可选经营价值金额只允许老板在“确认结果有效”时手工输入，并标记为 `owner-entered`。每条结果复核都绑定当前 Sales Manager Task 和 P8 Owner Decision，写入前会在 SQLite 事务里再次确认该 Sales Task 仍是最新、已完成且授权绑定未变化，避免旧结果串到新任务。潜客工作台新增“经营结果”汇总，只聚合老板手工录入的已确认金额；公开 `/api/prospects` 不返回老板结果备注、快照或价值金额。
+
+P10 在 P9 之上新增只读 `bossai.prospect-outcome-learning.v1`“结果复盘”。它只纳入“当前最新 Sales Manager Task 已完成 + P8 Owner Decision 绑定仍合法”的历史样本，并且只在 Sales Task ID 与 Owner Decision ID 同时匹配时读取对应 P9 结果复核。潜客工作台以白/灰卡片显示 4 个描述性视图：发现来源、官网证据方式、公司业务渠道角色、ICP 词汇覆盖区间；每个 cohort 只显示样本数以及 confirmed / no-value / observing / awaiting 数量。固定小样本门槛以下返回 `insufficient-sample` 并显示“样本不足，暂不形成判断”，不会输出最佳来源、最佳渠道或最可能成交客户。可选金额只聚合老板 `confirm-outcome` 时手工录入的币种金额；员工金额文本、no-value、Radar 分数都不会转成 Revenue / ROI。P10 不修改 `ProspectCandidate.score`、ICP/Sales 资格，不写 CRM，不创建 Manager Task，不调用模型，也不生成 close probability、purchase intent 或 next purchase date。公开 `/api/prospects` 不暴露 P10 私有聚合或老板金额。
+
+P10.1 把这套复盘进一步带回单账户 Account Review：新增只读 `bossai.prospect-outcome-learning-membership.v1`，直接说明“为什么这个账户进入这些复盘分组”。它只展示现有事实：发现来源、官网证据方式与状态、官网公司级业务渠道角色、ICP 词汇覆盖区间，以及当前 Sales Task 是否因“已完成 + P8 授权绑定仍有效”而具备进入 P10 样本的资格。未完成 Sales、无效授权链或 Sales Task 与授权链不一致时明确显示“不进入结果样本”。这不是新的评分、阶段或推荐，也不会产生购买意图、成交概率或因果解释。
+
+P10.2 继续补齐单账户解释：Account Review 现在还会明确显示该账户在当前 Outcome Learning 样本中究竟计作 `confirmed / no-value / observing / awaiting-owner-review / excluded`。该状态完全复用当前精确的 `Sales Manager Task ID + Owner Decision ID` P8/P9 lineage：只有当前最新已完成 Sales Task 且授权链合法时才可能形成结果状态；若当前 lineage 没有匹配的 P9 复核，就只计作等待老板确认；旧 Sales Task / 旧 Owner Decision 的历史复核不会污染新任务。`excluded` 只表示当前不进入样本，不是负向评分；所有状态都不代表 Revenue、ROI、成交概率或购买意图。
+
+P10.3 收口“看见复盘以后下一步怎么做”。Outcome Learning 顶部直接显示当前 eligible 样本数是否达到固定最小样本门槛；业务渠道视图明确提示一个账户可能同时属于多个渠道角色，因此渠道 cohort 样本数不能相加当成独立账户总数。只要 Owner Queue 中存在结果待审，Outcome Learning 会出现“去处理结果待审”入口，经营结果里的“等待老板确认 / 继续观察”卡片也进入同一现有 `result-review` 队列，不新增工作流。Owner Queue attention 筛选改为先向服务端提交 `attention` 再执行当前 500 条有界读取，避免更高优先级账户先占据混合结果后隐藏匹配的结果待审账户。
+
+P10.4 收口结果复盘的一致性、隐私和可达性。会改变 P8/P9/P10 真相的操作现在统一刷新经营结果、Outcome Learning 与老板待审队列；P9/P10 在契约内部按 `reviewedAt DESC + id DESC` 选择当前复核，不再依赖调用者传入的 journal 恰好已排序。老板待审队列首屏保持 10 条、潜客候选首屏保持 12 条，但均可继续展开当前有界结果，潜客接口读取上限保持 500。所有管理员接口统一返回 `Cache-Control: no-store, private` 与 `Pragma: no-cache`。全局 BossAI delegation 列表仍有 200 条边界，并新增 `totalCount/truncated`；若历史覆盖不完整，卡片“没有查到 delegation”只显示为状态未知，并停止直接重复创建 Intelligence/Sales 任务，要求先进入 Account Review 读取该账户的权威最新状态。
+
+P10.5 补齐“从组合复盘回到底层样本证据”的路径。每个非空 cohort 都可以通过管理员只读 `bossai.prospect-outcome-learning-drilldown.v1` 查看当前仍满足 P8/P9 合法链路的样本账户，再直接打开 Account Review 核实来源、官网证据、渠道、Sales/Owner Decision 与结果复核。Drill-down 只返回账户 ID、公司名、域名和当前 contribution state，按公司名稳定排列；它不返回老板 Outcome Review 备注、老板录入经营价值金额或员工价值声明，也不按候选分、价值、成交概率或购买意图排序。任何 P8/P9/P10 真相刷新都会清空旧 drill-down，避免组合视图已更新而样本列表仍停留在旧状态。该路径不创建新阶段、Manager Task、CRM 记录、模型调用或外联动作。
+
+P10.6 进一步把每个 cohort 的 `已确认 / 无价值 / 观察 / 待确认` 数字变成可核实证据入口。非零状态可在同一只读 drill-down 上增加 `state=confirmed|no-value|observing|awaiting-owner-review` 精确过滤，只返回该状态下当前仍合法的样本账户，同时返回 `cohortSampleCount` 保留完整分组分母，避免过滤后误读样本规模。零状态仍只是标签；未知 state 直接 `HTTP 400 / OUTCOME_LEARNING_STATE_INVALID`。该过滤仍按公司名排列，不返回老板备注、经营价值金额或员工金额声明，也不会产生排序、概率、CRM、Manager Task、模型调用或外联动作。
+
+P10.7 收口 Dashboard 只读请求竞态。手动刷新、扫描后的静默刷新、Owner Queue 快速切换、Outcome Learning cohort/state 连续点击以及结果真相刷新都可能产生重叠请求；现在页面统一使用可执行测试覆盖的 `latest-request` gate，只有最新序列响应或错误才有资格写回 UI。旧 Dashboard 批次不能覆盖新的 overview/prospect 状态，旧 trade/delegation/outcome/queue 响应不能污染新读取，truth refresh 会显式 invalidate 未完成的 drill-down，使旧样本列表不能在刷新后重新出现。该机制只控制浏览器读结果的写回顺序，不新增任务、状态机、Scheduler、CRM、Manager authority 或业务判断。
+
+P10.8 把同一竞态保护延伸到 Account Review 权威详情。快速从不同队列/复盘样本打开账户时，只有最新账户详情请求可以更新弹窗；关闭 Account Review 会直接 invalidate 未完成请求，防止关闭后旧详情再次出现。账户切换或重新加载详情时也会 invalidate 旧的 BossAI Manager 结果读取，因此 A 账户的慢员工结果不能写进 B 账户详情。旧请求失败也不会弹出覆盖新页面的错误提示。该机制仍只约束浏览器读取顺序，不改变 Account Review、Manager、审批、CRM 或结果真相的任何服务端权威。
+
+可选的 Web 搜索发现使用正式 Brave Web Search JSON API，而不是抓取 Google/Bing 搜索结果 HTML。只有设置 `RADAR_PROSPECT_SEARCH_PROVIDER=brave` 和服务端 `BRAVE_SEARCH_API_KEY` 后才启用；密钥不会进入浏览器或公开配置。地图企业发现使用 Google Places Text Search (New) JSON API，仅在 `RADAR_PROSPECT_MAP_PROVIDER=google_places` 且服务端配置 `GOOGLE_PLACES_API_KEY` 时启用，并只请求企业名称、公开地址、地点类型与官网 URI。Google Places 可能产生 API 计费，因此默认关闭。`RADAR_PROSPECT_SEARCH_QUERIES` / `RADAR_PROSPECT_MAP_QUERIES` 控制自动扫描查询；老板在“潜客候选”区域输入一次目标企业描述时，已配置的 Web 与 Maps Provider 会并行发现、按域名合并，再统一进入官网二次核验。每个 Provider 查询最多返回 20 条，默认 10 条；并发默认 2；企业官网种子默认并发 4，潜客目录默认并发 3；每轮最多二次核验 `RADAR_PROSPECT_VERIFY_MAX_WEBSITES_PER_SCAN` 个官网（默认 20）。同一 Radar 进程一次只允许一个手动潜客搜索任务，避免重复费用和网络突发。
+
+`RADAR_PROSPECT_ICP_TERMS` 用分号或换行声明老板明确的目标客户词组，例如 `pet supplies;smart feeder;distributor`。Radar 只在完成官网二次核验后，基于企业名称、官网描述和产品/服务信号计算词组覆盖率，并单独显示 `ICP 官网覆盖`。该覆盖率不会改变 Radar 的证据强度分，也不得解释成真实采购意图、预算、成交概率或客户阶段。
+
+“潜客候选”入口还提供一次性的“扩展搜索方向”：未配置 AI Gateway 时使用本地公司角色矩阵，配置 `AI_PROVIDER=bossai-gateway` 时才通过 BossAI Central AI Gateway 生成 6–8 个公司级搜索方向。规划动作本身不启动采集；老板选择某个方向后才执行已配置的 Web/Maps 发现。自动扫描结果按 `公开名录 / Web 搜索 / 地图` 分渠道显示成功、部分成功、失败或未启用状态、候选数量、错误数量和耗时。
+
+贸易/海关数据使用独立 `trade_records` 证据池。老板可导入自己有权使用的 CSV/TSV，Radar 自动映射买方/进口商/供应商/出口商、国家、商品、HS 编码、日期、数量、金额、币种和可选官网；个人邮箱/个人电话等列不会进入贸易证据模型。前端先调用 `/api/admin/trade-records/preview` 做无写入预览，展示推断出的字段映射、重要缺失字段、明确不纳入模型的原始列和公司级样本，老板确认当前文件后才真正导入。贸易证据支持按企业/商品/来源、HS 前缀、交易角色、国家和日期范围筛选；公司摘要按“公司名 + 国家/地区”独立聚合，防止同名跨国企业混算。摘要只描述历史事实：首次/最近历史日期、有效日期样本数、中位/最短/最长历史间隔、`insufficient / single-gap / regular / variable` 历史节奏、商品/HS 覆盖、按币种历史金额和官网状态，并用 `REVIEW_FIRST / REVIEW_SOON / REVIEW_LATER` 仅帮助老板决定人工复核顺序。系统没有 `intentScore`、`purchaseProbability` 或 `nextPurchaseDate`，也不会把历史重复交易推导成当前需求、预算、决策权或成交概率。导入不会自动创建潜客或 CRM。单条记录可显式晋级；公司摘要也可在“公司名 + 国家/地区”身份边界内显式建立一个公司级潜客候选，并把该企业多条历史交易私有挂接到同一候选，但历史交易次数不会抬高潜客基础分。同名跨国家必须先消歧；同一身份出现多个官网域名必须人工选择；无官网时才走已配置 Web/Maps 解析。无论单条还是公司级解析，只有真正通过 robots/SSRF/Sitemap 等受控官网采集并产生 `websiteContext` 的域名才会出现在可采用候选中，失败域名不会伪装成“已核验官网”。显式晋级后只建立私有 `prospect_trade_evidence` 关联，公开 `/api/prospects` 不返回历史贸易金额、数量或来源文件；只有管理员触发 Intelligence 复核时才附带最多 8 条关联历史贸易事实，且只有权威情报结果允许 Sales handoff 并经人工 `READY_FOR_SALES` 后，同一批受限历史事实才可进入 `sales.lead.qualify`。Intelligence 和 Sales 两个独立员工本身也会防御性拒绝未核验官网事实。历史贸易事实始终保持为历史证据，不会自动推导成当前采购意图、预算、决策权、下一次订单或成交概率。
+
 公网部署前必须：
 
 1. 将 `RADAR_ADMIN_API_KEY` 改为足够长的随机值；
@@ -383,6 +477,20 @@ RADAR_LITE_HOME=C:\\Users\\42059\\bossai-radar-lite
 | GET | `/api/health` | 服务、版本和许可状态 |
 | GET | `/api/overview` | 总览、统计、调度和最新日报 |
 | GET | `/api/opportunities` | 机会列表 |
+| GET | `/api/prospects` | 潜客候选列表；候选与 CRM 正式线索隔离 |
+| POST | `/api/admin/prospects/plan` | 一次性扩展公司级搜索方向；不会启动采集或写 CRM |
+| POST | `/api/admin/prospects/discover` | 管理员输入目标企业描述，通过已配置 Web/Maps API 发现候选并做有界官网核验；不会写 CRM |
+| GET | `/api/admin/trade-records` | 管理员查看/筛选本地贸易证据和公司级历史摘要；历史节奏仅供人工复核排序 |
+| POST | `/api/admin/trade-records/preview` | 无写入预览 CSV/TSV 字段映射、缺失字段、忽略列和公司级样本 |
+| POST | `/api/admin/trade-records/import` | 确认导入有权使用的 CSV/TSV 贸易记录；去重但不创建潜客/CRM |
+| POST | `/api/admin/trade-records/:id/resolve-website` | 对无官网贸易记录显式搜索并受控核验候选官网；只返回已核验建议，不自动采用 |
+| POST | `/api/admin/trade-records/:id/prospect` | 对已选定官网做受控核验并显式建立单条贸易证据潜客候选；仍需 Intelligence 审核 |
+| POST | `/api/admin/trade-companies/resolve-website` | 按公司名 + 国家/地区解析/核验公司官网；多候选必须人工选择 |
+| POST | `/api/admin/trade-companies/prospect` | 在身份与官网消歧后建立公司级潜客候选并私有关联该组历史贸易证据；不提高购买意向分 |
+| POST | `/api/admin/prospects/:id/verify-website` | 对搜索/地图/名录仅发现的 `unverified` 潜客显式核验官网；不创建员工任务/CRM |
+| PATCH | `/api/admin/prospects/:id` | 人工更新潜客审核状态；官网证据已核验且 Intelligence 权威结果明确允许 Sales handoff 后才接受 `READY_FOR_SALES` |
+| POST | `/api/admin/prospects/:id/delegate` | 仅将已核验/静态不完整官网证据交给 Intelligence Agent 复核；`unverified` 会 fail-closed，不创建 CRM |
+| POST | `/api/admin/prospects/:id/qualify` | 仅对人工批准的 `READY_FOR_SALES` 候选创建 `bossai-sales-agent` / `sales.lead.qualify` Manager 任务；仍不写 CRM |
 | GET | `/api/evidence` | 证据列表 |
 | GET | `/api/runs` | 扫描历史 |
 | GET | `/api/report/latest` | 最新日报 JSON |

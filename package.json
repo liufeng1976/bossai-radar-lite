@@ -3,6 +3,29 @@
   "version": "0.7.1",
   "private": true,
   "description": "BossAI Radar Lite - source-available non-commercial overseas business opportunity radar",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "刘风 / BossAI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/liufeng1976/bossai-radar-lite"
+  },
+  "homepage": "https://github.com/liufeng1976/bossai-radar-lite#readme",
+  "bugs": {
+    "url": "https://github.com/liufeng1976/bossai-radar-lite/issues"
+  },
+  "keywords": [
+    "bossai",
+    "market-intelligence",
+    "business-intelligence",
+    "opportunity-radar",
+    "mcp",
+    "ai-agent",
+    "reddit",
+    "hacker-news",
+    "github",
+    "competitive-intelligence",
+    "startup-research"
+  ],
   "type": "module",
   "bin": {
     "bossai-radar-install": "scripts/agent-bootstrap.mjs"
@@ -22,14 +45,18 @@
     "service:status": "node scripts/radar-service.mjs status",
     "build": "tsc -p tsconfig.json && node scripts/copy-public.mjs",
     "test": "tsx --test tests/**/*.test.ts",
-    "check:frontend": "node --check public/app.js && node --check public/commercial.js && node --check public/leads.js && node --check public/i18n.js",
+    "check:frontend": "node --check public/app.js && node --check public/latest-request.js && node --check public/commercial.js && node --check public/leads.js && node --check public/i18n.js",
     "check:i18n": "node scripts/i18n-check.mjs",
     "verify:bossai-migration": "node scripts/verify-bossai-migration.mjs",
     "verify:constitutional-migration": "node scripts/verify-constitutional-migration.mjs",
     "growth:traffic": "node scripts/github-traffic-report.mjs",
     "growth:traffic:check": "node scripts/github-traffic-report.mjs --self-test",
+    "verify:public-release": "node scripts/verify-public-release.mjs",
+    "verify:public-final": "node scripts/verify-public-final.mjs",
+    "verify": "npm run verify:constitutional-migration",
     "check": "npm run build && npm run test && npm run check:frontend && npm run check:i18n && npm run verify:bossai-migration && npm run growth:traffic:check",
-    "release:check": "npm run check && node scripts/release-check.mjs",
+    "release:check": "npm run verify:public-release && npm run check && node scripts/release-check.mjs",
+    "release:public-final": "npm run verify:public-release && npm run verify:public-final && npm run check && node scripts/release-check.mjs",
     "package:release": "npm run release:check && node scripts/package-release.mjs"
   },
   "engines": {
