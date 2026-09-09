@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Commercial licensing and Pro
+    url: https://github.com/liufeng1976/bossai-radar-lite/blob/main/docs/COMMERCIAL_LICENSE.md
+    about: Commercial internal use, customer delivery, white-label, managed service and Pro/enterprise rights require a separate commercial agreement.
+  - name: Security policy
+    url: https://github.com/liufeng1976/bossai-radar-lite/blob/main/SECURITY.md
+    about: Please follow the private security-reporting guidance instead of posting secrets or sensitive evidence in a public issue.
