@@ -7,8 +7,36 @@ export interface BossAiOsClientOptions {
   baseUrl: string;
   apiKey?: string;
   jwt?: string;
+  workbenchKey?: string;
   model?: string;
   timeoutMs?: number;
+}
+
+export interface BossAiManagerOutcomeAttribution {
+  schema: "bossai.manager-outcome-attribution.v1";
+  taskId: string;
+  resultRevision: number;
+  generatedAt: string;
+  authority: "bossai-os";
+  kpiImpacts: Array<{
+    kpiRef: string;
+    label: string;
+    direction: "increase" | "decrease" | "maintain";
+    delta: number;
+    unit: string;
+    sourceRef: string;
+  }>;
+  businessValue: {
+    valueType: "realized_revenue" | "realized_savings";
+    amount: number;
+    currency: string;
+    method: "observed_source_system";
+    sourceRef: string;
+  } | null;
+  evidenceRefs: string[];
+  readOnly: true;
+  mutationPerformed: false;
+  persistedByBossAIWork: false;
 }
 
 export interface BossAiManagerRun {
@@ -26,6 +54,7 @@ export interface BossAiManagerRun {
   completedAt?: string;
   phase?: string;
   progress?: number | null;
+  outcomeAttribution?: BossAiManagerOutcomeAttribution;
 }
 
 export interface BossAiManagerSubmission {
@@ -104,6 +133,7 @@ interface ManagerTaskDetailPayload {
   result?: {
     summary?: string;
   } | null;
+  outcomeAttribution?: unknown;
   events?: unknown[];
 }
 
@@ -122,6 +152,7 @@ export class BossAiOsClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly jwt: string;
+  private readonly workbenchKey: string;
   private readonly model: string;
   private readonly timeoutMs: number;
 
@@ -129,6 +160,7 @@ export class BossAiOsClient {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.apiKey = options.apiKey?.trim() || "";
     this.jwt = options.jwt?.trim() || "";
+    this.workbenchKey = options.workbenchKey?.trim() || "";
     this.model = options.model?.trim() || "bossai-balanced";
     this.timeoutMs = normalizeTimeout(options.timeoutMs);
   }
@@ -139,6 +171,10 @@ export class BossAiOsClient {
 
   employeeConfigured(): boolean {
     return Boolean(this.baseUrl && this.jwt);
+  }
+
+  workbenchConfigured(): boolean {
+    return Boolean(this.baseUrl && this.workbenchKey);
   }
 
   async chatCompletion(input: {
@@ -203,7 +239,7 @@ export class BossAiOsClient {
     const submission = payload as ManagerTaskSubmissionPayload;
     const run = managerSubmissionToRun(submission);
     return {
-      agent: { id: agentId, name: "BossAI Intelligence Agent" },
+      agent: { id: agentId, name: agentDisplayName(agentId) },
       runtime: {
         platform: "bossai-os",
         harness: "hermes",
@@ -240,6 +276,55 @@ export class BossAiOsClient {
     return { success: true, data: Array.isArray(detail.events) ? detail.events : [] };
   }
 
+  async ownerBusinessDecisionV2Supported(): Promise<boolean> {
+    const payload = unwrapData(await this.requestJson("/health", { headers: { Accept: "application/json" } }));
+    const record = isRecord(payload) ? payload : {};
+    const contracts = isRecord(record.optionalContracts) ? record.optionalContracts : {};
+    const declaration = isRecord(contracts.ownerBusinessDecisionsV2) ? contracts.ownerBusinessDecisionsV2 : {};
+    return declaration.schemaVersion === "bossai.owner-business-decision-list.v2"
+      && declaration.method === "GET"
+      && declaration.path === "/api/owner/business-decisions/v2";
+  }
+
+  async listOwnerBusinessDecisionsV2(input: {
+    prospectId: string;
+    intelligenceManagerTaskId: string;
+    limit?: number;
+  }): Promise<unknown[]> {
+    this.requireWorkbenchAuth();
+    const prospectId = safeOpaqueToken(input.prospectId, 160, "BOSSAI_OWNER_DECISION_V2_PROSPECT_INVALID");
+    const contextId = safeOpaqueToken(input.intelligenceManagerTaskId, 160, "BOSSAI_OWNER_DECISION_V2_CONTEXT_INVALID");
+    const limit = Math.max(1, Math.min(20, Math.trunc(input.limit ?? 10)));
+    const query = new URLSearchParams({
+      domain: "sales-prospect",
+      subjectType: "prospect",
+      subjectId: prospectId,
+      contextType: "intelligence-manager-task",
+      contextId,
+      limit: String(limit),
+    });
+    const payload = unwrapData(await this.requestJson(
+      `/api/owner/business-decisions/v2?${query.toString()}`,
+      { headers: this.workbenchHeaders(false) },
+    ));
+    const record = isRecord(payload) ? payload : {};
+    if (
+      record.schema !== "bossai.owner-business-decision-list.v2"
+      || record.authority !== "bossai-os"
+      || record.inferredDecisionsIncluded !== false
+      || record.automaticExecutionAuthorized !== false
+      || record.externalActionsExecuted !== false
+      || !Array.isArray(record.decisions)
+      || record.decisions.length > limit
+    ) {
+      throw new BossAiOsClientError(
+        "BossAI OS returned an invalid owner business-decision v2 list.",
+        "BOSSAI_OWNER_DECISION_V2_LIST_INVALID",
+      );
+    }
+    return record.decisions;
+  }
+
   stableOperationId(parts: string[]): string {
     const digest = createHash("sha256").update(parts.join("\u001f")).digest("hex").slice(0, 24);
     return `radar:${digest}`;
@@ -254,9 +339,25 @@ export class BossAiOsClient {
     }
   }
 
+  private requireWorkbenchAuth(): void {
+    if (!this.workbenchConfigured()) {
+      throw new BossAiOsClientError(
+        "BossAI OS read-only Workbench key is not configured for owner decision projection.",
+        "BOSSAI_WORKBENCH_AUTH_NOT_CONFIGURED",
+      );
+    }
+  }
+
   private employeeHeaders(includeContentType = true): Record<string, string> {
     return {
       Authorization: `Bearer ${this.jwt}`,
+      ...(includeContentType ? { "Content-Type": "application/json" } : {}),
+    };
+  }
+
+  private workbenchHeaders(includeContentType = true): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.workbenchKey}`,
       ...(includeContentType ? { "Content-Type": "application/json" } : {}),
     };
   }
@@ -352,7 +453,132 @@ function managerDetailToRun(value: ManagerTaskDetailPayload): BossAiManagerRun {
     completedAt: status === "completed" ? value.task.updatedAt : undefined,
     phase,
     progress: Number.isFinite(value.progress?.progress) ? Number(value.progress?.progress) : null,
+    ...(value.outcomeAttribution !== undefined
+      ? { outcomeAttribution: parseManagerOutcomeAttribution(value.outcomeAttribution, value.task.id) }
+      : {}),
   };
+}
+
+function parseManagerOutcomeAttribution(value: unknown, expectedTaskId: string): BossAiManagerOutcomeAttribution {
+  const attribution = isRecord(value) ? value : {};
+  const kpiImpacts = Array.isArray(attribution.kpiImpacts) ? attribution.kpiImpacts : [];
+  const evidenceRefs = Array.isArray(attribution.evidenceRefs) ? attribution.evidenceRefs : [];
+  if (
+    attribution.schema !== "bossai.manager-outcome-attribution.v1"
+    || attribution.authority !== "bossai-os"
+    || attribution.taskId !== expectedTaskId
+    || !Number.isInteger(attribution.resultRevision)
+    || Number(attribution.resultRevision) < 1
+    || typeof attribution.generatedAt !== "string"
+    || !Number.isFinite(Date.parse(attribution.generatedAt))
+    || attribution.readOnly !== true
+    || attribution.mutationPerformed !== false
+    || attribution.persistedByBossAIWork !== false
+    || kpiImpacts.length > 8
+    || evidenceRefs.length > 8
+  ) {
+    throw new BossAiOsClientError(
+      "BossAI Manager returned an invalid outcome attribution boundary.",
+      "BOSSAI_MANAGER_OUTCOME_ATTRIBUTION_INVALID",
+    );
+  }
+
+  const parsedKpis = kpiImpacts.map((value) => {
+    const impact = isRecord(value) ? value : {};
+    const direction = stringValue(impact.direction);
+    const delta = Number(impact.delta);
+    const kpiRef = safeOpaqueRef(impact.kpiRef);
+    const label = safePlainText(impact.label, 120);
+    const unit = safePlainText(impact.unit, 24);
+    const sourceRef = safeOpaqueRef(impact.sourceRef);
+    if (
+      !kpiRef
+      || !label
+      || !["increase", "decrease", "maintain"].includes(direction)
+      || !Number.isFinite(delta)
+      || !unit
+      || !sourceRef
+      || (direction === "increase" && delta < 0)
+      || (direction === "decrease" && delta > 0)
+      || (direction === "maintain" && delta !== 0)
+    ) {
+      throw new BossAiOsClientError(
+        "BossAI Manager returned an invalid KPI outcome attribution.",
+        "BOSSAI_MANAGER_OUTCOME_ATTRIBUTION_INVALID",
+      );
+    }
+    return {
+      kpiRef,
+      label,
+      direction: direction as "increase" | "decrease" | "maintain",
+      delta,
+      unit,
+      sourceRef,
+    };
+  });
+
+  let businessValue: BossAiManagerOutcomeAttribution["businessValue"] = null;
+  if (attribution.businessValue !== null && attribution.businessValue !== undefined) {
+    const candidate = isRecord(attribution.businessValue) ? attribution.businessValue : {};
+    const valueType = stringValue(candidate.valueType);
+    const amount = Number(candidate.amount);
+    const currency = stringValue(candidate.currency).toUpperCase();
+    const sourceRef = safeOpaqueRef(candidate.sourceRef);
+    if (
+      !["realized_revenue", "realized_savings"].includes(valueType)
+      || !Number.isFinite(amount)
+      || amount <= 0
+      || !/^[A-Z]{3}$/u.test(currency)
+      || candidate.method !== "observed_source_system"
+      || !sourceRef
+    ) {
+      throw new BossAiOsClientError(
+        "BossAI Manager returned an invalid realized business value attribution.",
+        "BOSSAI_MANAGER_OUTCOME_ATTRIBUTION_INVALID",
+      );
+    }
+    businessValue = {
+      valueType: valueType as "realized_revenue" | "realized_savings",
+      amount,
+      currency,
+      method: "observed_source_system",
+      sourceRef,
+    };
+  }
+
+  const parsedEvidenceRefs = evidenceRefs.map((value) => safeOpaqueRef(value));
+  if (parsedEvidenceRefs.some((value) => !value) || new Set(parsedEvidenceRefs).size !== parsedEvidenceRefs.length) {
+    throw new BossAiOsClientError(
+      "BossAI Manager returned invalid outcome evidence references.",
+      "BOSSAI_MANAGER_OUTCOME_ATTRIBUTION_INVALID",
+    );
+  }
+
+  return {
+    schema: "bossai.manager-outcome-attribution.v1",
+    taskId: expectedTaskId,
+    resultRevision: Number(attribution.resultRevision),
+    generatedAt: attribution.generatedAt,
+    authority: "bossai-os",
+    kpiImpacts: parsedKpis,
+    businessValue,
+    evidenceRefs: parsedEvidenceRefs,
+    readOnly: true,
+    mutationPerformed: false,
+    persistedByBossAIWork: false,
+  };
+}
+
+function safePlainText(value: unknown, maximum: number): string {
+  const normalized = stringValue(value);
+  if (!normalized || normalized.length > maximum || /\u0000|[\r\n]/u.test(normalized)) return "";
+  return normalized;
+}
+
+function safeOpaqueRef(value: unknown): string {
+  const normalized = safePlainText(value, 160);
+  if (!normalized || /\\|\/|\.\./u.test(normalized) || /^[A-Za-z]:/u.test(normalized)) return "";
+  return normalized;
 }
 
 function validateInstallation(value: unknown, agentId: string): void {
@@ -367,10 +593,16 @@ function validateInstallation(value: unknown, agentId: string): void {
     || typeof installation.healthStatus !== "string"
   ) {
     throw new BossAiOsClientError(
-      "BossAI OS returned an invalid Intelligence Agent installation.",
-      "BOSSAI_INTELLIGENCE_AGENT_INSTALLATION_INVALID",
+      `BossAI OS returned an invalid Agent installation for ${agentId}.`,
+      "BOSSAI_AGENT_INSTALLATION_INVALID",
     );
   }
+}
+
+function agentDisplayName(agentId: string): string {
+  if (agentId === "bossai-intelligence-agent") return "BossAI Intelligence Agent";
+  if (agentId === "bossai-sales-agent") return "BossAI Sales Agent";
+  return agentId;
 }
 
 function validateManagerSubmission(value: unknown, agentId: string): void {
@@ -434,6 +666,14 @@ function parseJson(value: string): unknown {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function safeOpaqueToken(value: unknown, maximum: number, code: string): string {
+  const normalized = stringValue(value);
+  if (!normalized || normalized.length > maximum || !/^[A-Za-z0-9][A-Za-z0-9._:-]*$/u.test(normalized)) {
+    throw new BossAiOsClientError("BossAI OS authority reference is invalid.", code, 400);
+  }
+  return normalized;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

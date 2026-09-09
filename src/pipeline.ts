@@ -1,20 +1,33 @@
 import { enrichOpportunity } from "./ai.js";
-import { collectAll } from "./collectors.js";
+import { collectAll, discoverAllProspectCandidates } from "./collectors.js";
 import { RadarDatabase } from "./database.js";
+import { enrichProspectCandidates } from "./prospects.js";
 import { createEnglishReport, createReport } from "./report.js";
 import { buildOpportunities, scoreEvidence } from "./scoring.js";
-import type { Opportunity, Report, ScanRunSummary, ScanTrigger, ScoredEvidence, SourceOutcome } from "./types.js";
+import type {
+  Opportunity,
+  ProspectCandidate,
+  ProspectDiscoveryOutcome,
+  Report,
+  ScanRunSummary,
+  ScanTrigger,
+  ScoredEvidence,
+  SourceOutcome,
+} from "./types.js";
 
 export interface ScanResult {
   run: ScanRunSummary;
   report: Report | null;
   opportunities: Opportunity[];
+  prospects: ProspectCandidate[];
+  prospectDiscovery: ProspectDiscoveryOutcome;
   sources: SourceOutcome[];
 }
 
 export class RadarEngine {
   private currentScan: Promise<ScanResult> | null = null;
   private latestSources: SourceOutcome[] = [];
+  private latestProspectDiscovery: ProspectDiscoveryOutcome = { status: "skipped", candidates: [], errors: [], durationMs: 0 };
 
   constructor(private readonly db: RadarDatabase) {}
 
@@ -28,6 +41,10 @@ export class RadarEngine {
 
   setSourceStatus(outcomes: SourceOutcome[]): void {
     this.latestSources = outcomes;
+  }
+
+  prospectDiscoveryStatus(): ProspectDiscoveryOutcome {
+    return this.latestProspectDiscovery;
   }
 
   scan(trigger: ScanTrigger): Promise<ScanResult> {
@@ -44,16 +61,26 @@ export class RadarEngine {
     let collectedCount = 0;
     let evidenceCount = 0;
     let opportunities: Opportunity[] = [];
+    let prospects: ProspectCandidate[] = [];
+    let prospectDiscovery: ProspectDiscoveryOutcome = { status: "skipped", candidates: [], errors: [], durationMs: 0 };
     const scoredItems: ScoredEvidence[] = [];
     const errors: string[] = [];
 
     try {
-      sourceOutcomes = await collectAll();
+      prospectDiscovery = await discoverAllProspectCandidates();
+      this.latestProspectDiscovery = prospectDiscovery;
+      const discoveredWebsiteSeeds = prospectDiscovery.candidates.map((candidate) => candidate.websiteUrl);
+      sourceOutcomes = await collectAll(discoveredWebsiteSeeds);
       this.latestSources = sourceOutcomes;
       collectedCount = sourceOutcomes.reduce((sum, outcome) => sum + outcome.items.length, 0);
       for (const outcome of sourceOutcomes) {
         if (outcome.error) errors.push(`${outcome.source}: ${outcome.error}`);
       }
+      for (const error of prospectDiscovery.errors) errors.push(`prospect-discovery: ${error}`);
+
+      const websiteItems = sourceOutcomes.find((outcome) => outcome.source === "website")?.items ?? [];
+      const enrichedProspects = enrichProspectCandidates(prospectDiscovery.candidates, websiteItems);
+      prospects = enrichedProspects.map((candidate) => this.db.saveProspectCandidate(candidate));
 
       const seen = new Set<string>();
       for (const raw of sourceOutcomes.flatMap((outcome) => outcome.items)) {
@@ -94,7 +121,7 @@ export class RadarEngine {
         { collectedCount, evidenceCount, opportunityCount: opportunities.length },
         errors,
       );
-      return { run: finishedRun, report, opportunities, sources: sourceOutcomes };
+      return { run: finishedRun, report, opportunities, prospects, prospectDiscovery, sources: sourceOutcomes };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push(message);
@@ -104,7 +131,7 @@ export class RadarEngine {
         { collectedCount, evidenceCount, opportunityCount: opportunities.length },
         errors,
       );
-      return { run: finishedRun, report: null, opportunities, sources: sourceOutcomes };
+      return { run: finishedRun, report: null, opportunities, prospects, prospectDiscovery, sources: sourceOutcomes };
     }
   }
 }

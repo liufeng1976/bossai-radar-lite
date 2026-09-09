@@ -3,12 +3,120 @@ import { config } from "./config.js";
 import { deterministicNarrative } from "./scoring.js";
 import type { AiOpportunityNarrative, Opportunity, SavedEvidence } from "./types.js";
 
+export interface ProspectQuerySuggestion {
+  query: string;
+  angle: string;
+  rationale: string;
+}
+
+export interface ProspectQueryPlan {
+  mode: "bossai-gateway" | "deterministic";
+  suggestions: ProspectQuerySuggestion[];
+}
+
 const bossAiOs = new BossAiOsClient({
   baseUrl: config.bossAiOs.baseUrl,
   apiKey: config.bossAiOs.apiKey,
   model: config.bossAiOs.model,
   timeoutMs: config.bossAiOs.timeoutMs,
 });
+
+export async function planProspectQueries(goal: string): Promise<ProspectQueryPlan> {
+  const deterministic = deterministicProspectQueryPlan(goal);
+  if (config.ai.provider !== "bossai-gateway" || !bossAiOs.featureConfigured()) return deterministic;
+  try {
+    const content = await bossAiOs.chatCompletion({
+      temperature: 0.2,
+      responseFormat: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: [
+            "你是 BossAI 外贸潜客搜索方向规划器。只规划公司级公开信息搜索，不执行搜索。",
+            "基于老板目标生成 6 到 8 个互补查询，覆盖分销商/批发商/进口商/零售商/品牌商/行业场景等合理角度。",
+            "不得生成个人姓名、个人邮箱、个人手机号，不要求登录 LinkedIn/Facebook/TikTok，不承诺购买意图、预算或成交概率。",
+            "输出严格 JSON：{suggestions:[{query,angle,rationale}]}。query 适合 Web Search 和地图 Text Search，单条最多 180 字符。",
+          ].join("\n"),
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            goal: normalizeProspectGoal(goal),
+            ownerIcpTerms: config.radar.prospectIcpTerms.slice(0, 12),
+            region: config.radar.prospectMapRegionCode || config.radar.prospectSearchCountry,
+            language: config.radar.prospectMapLanguageCode || config.radar.prospectSearchLanguage,
+          }),
+        },
+      ],
+    });
+    return validateProspectQueryPlan(parseJsonObject(content), deterministic);
+  } catch (error) {
+    console.warn("[AI] Prospect query planning failed; deterministic plan retained:", error);
+    return deterministic;
+  }
+}
+
+export function deterministicProspectQueryPlan(goal: string): ProspectQueryPlan {
+  const normalizedGoal = normalizeProspectGoal(goal);
+  const chinese = /[\p{Script=Han}]/u.test(normalizedGoal);
+  const roles = chinese
+    ? ["批发商", "经销商", "进口商", "零售商", "品牌商", "供应商"]
+    : ["wholesaler", "distributor", "importer", "retailer", "brand", "supplier"];
+  const icp = config.radar.prospectIcpTerms.slice(0, 4);
+  const suggestions: ProspectQuerySuggestion[] = [];
+  const seen = new Set<string>();
+  const push = (query: string, angle: string, rationale: string) => {
+    const clean = normalizeProspectQuery(query);
+    const key = clean.toLocaleLowerCase("en-US");
+    if (!clean || seen.has(key)) return;
+    seen.add(key);
+    suggestions.push({ query: clean, angle, rationale });
+  };
+  push(normalizedGoal, chinese ? "原始目标" : "base target", chinese ? "保留老板原始搜索意图" : "Preserve the owner's original search intent.");
+  for (const role of roles) {
+    push(`${normalizedGoal} ${role}`, role, chinese ? `从${role}角色寻找公司候选` : `Find company candidates through the ${role} role.`);
+  }
+  for (const term of icp) {
+    if (suggestions.length >= 8) break;
+    push(`${normalizedGoal} ${term}`, chinese ? `ICP：${term}` : `ICP: ${term}`, chinese ? "补充老板明确的目标客户词组" : "Add an owner-defined ICP phrase.");
+  }
+  return { mode: "deterministic", suggestions: suggestions.slice(0, 8) };
+}
+
+function validateProspectQueryPlan(value: unknown, fallback: ProspectQueryPlan): ProspectQueryPlan {
+  if (!isRecord(value) || !Array.isArray(value.suggestions)) return fallback;
+  const suggestions: ProspectQuerySuggestion[] = [];
+  const seen = new Set<string>();
+  for (const item of value.suggestions.slice(0, 10)) {
+    if (!isRecord(item)) continue;
+    const query = normalizeProspectQuery(item.query);
+    if (!query || prospectQueryContainsPersonalTargeting(query)) continue;
+    const key = query.toLocaleLowerCase("en-US");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    suggestions.push({
+      query,
+      angle: safeString(item.angle, "company discovery", 80),
+      rationale: safeString(item.rationale, "Public company discovery direction.", 180),
+    });
+    if (suggestions.length >= 8) break;
+  }
+  return suggestions.length >= 3 ? { mode: "bossai-gateway", suggestions } : fallback;
+}
+
+function normalizeProspectGoal(value: string): string {
+  const normalized = String(value || "").replace(/\s+/gu, " ").trim().slice(0, 400);
+  return normalized || "B2B potential customers";
+}
+
+function normalizeProspectQuery(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/\s+/gu, " ").trim().slice(0, 180);
+}
+
+function prospectQueryContainsPersonalTargeting(value: string): boolean {
+  return /(?:personal email|personal phone|私人邮箱|个人邮箱|个人手机号|身份证|home address|家庭住址)/iu.test(value);
+}
 
 export async function enrichOpportunity(
   opportunity: Opportunity,
