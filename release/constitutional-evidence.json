@@ -1,29 +1,91 @@
 {
-  "schemaVersion": 2,
-  "evidenceId": "bossai-radar-intelligence-manager-plugin-v0.1.0-2026-08-05",
-  "batchId": "bossai-radar-intelligence-manager-plugin-v0.1.0-2026-08-05",
+  "schemaVersion": 3,
+  "evidenceId": "bossai-radar-account-review-race-safety-p10-8-2026-09-07",
+  "batchId": "bossai-radar-account-review-race-safety-p10-8-2026-08-20",
   "projectId": "bossai-radar-lite",
   "constitution": {
-    "version": "2026.08.04.2",
-    "sha256": "c87e3e1d89d6bfddc9a032847ca921cc5375f58353ed70aef4885fa112bbc825",
-    "rootKeyId": "bossai-constitution-root-2026-08-r4"
+    "version": "2026.08.30.1",
+    "sha256": "ec3c5243ff2114e247953b94ee3bc6e25b364848ade16800c7485369e8a5b4c0",
+    "rootKeyId": "bossai-constitution-root-2026-08-r7"
   },
   "claimedCompletionLevel": 2,
   "releaseScope": "technical_baseline",
-  "userOutcome": "A verified Radar opportunity can enter a governed BossAI Manager task routed to the independent Intelligence Agent while Radar retains source evidence, deterministic scoring, reports, leads and SQLite authority.",
-  "userVisibleResult": "The opportunity card creates a Manager task only when bossai-intelligence-agent@0.1.0 is signature verified, enabled, healthy and contract compatible. Execution and review state remain separate and no external action is claimed.",
+  "userOutcome": "BossAI Radar Lite preserves current owner-review and descriptive Outcome Learning truth while preventing stale account-detail, Manager-result, queue, dashboard and cohort reads from overwriting newer owner-visible state.",
+  "userVisibleResult": "Rapid account switching, dialog close, refresh and filter changes keep the newest governed state visible. Historical outcome cohorts remain descriptive only, preserve current P8/P9 lineage, and do not become a Sales score, CRM authority, prediction engine or external-action path.",
   "realEntryValidation": {
-    "entry": "BossAI Radar Lite real server delegation endpoint plus packaged Intelligence Agent child process",
-    "checkId": "real-entry:radar-intelligence-manager-plugin-v0.1.0",
+    "entry": "Prospect Candidates → Outcome Learning → non-zero outcome-state cohort → Account Review.",
+    "checkId": "real-entry:account-review-race-safety-p10-8-2026-08-20",
     "scenarios": [
-      "Exact plugin installation readiness is checked before task creation",
-      "New delegation returns a BossAI Manager Task ID routed only to bossai-intelligence-agent",
-      "Repeated source operation reuses the existing local Manager reference",
-      "Manager task state and event history are read through the compatibility Radar routes",
-      "Demo work, missing authentication and unsigned plugin state fail closed",
-      "The plugin accepts, waits for approval, survives offline approval and resumes after restart",
-      "The result states no scan, no Radar mutation, no lead mutation, no outreach and no publication"
+      "A newer Account Review request invalidates older detail responses and errors.",
+      "Closing Account Review invalidates pending detail and Manager-result reads.",
+      "Outcome truth refresh invalidates pending cohort/state drill-down reads.",
+      "Owner Queue and dashboard latest-request guards prevent stale responses from replacing newer state.",
+      "Outcome Learning remains descriptive, lineage-safe and non-predictive.",
+      "No Manager task, CRM record, score mutation, Provider call or customer-facing external action is created by Outcome Learning."
     ]
+  },
+  "productThinkingValidation": {
+    "userSuccessEvidence": [
+      "The owner sees the newest requested Account Review and Manager result instead of stale cross-account state.",
+      "Outcome Learning remains historical context rather than an automated Sales ranking or causal claim.",
+      "Current P8/P9 lineage remains the only source for contribution-state membership."
+    ],
+    "userJourneyEvidence": [
+      "Prospect Candidates → Outcome Learning → outcome-state cohort → Account Review remains the governed review path.",
+      "Refresh, rapid switching and dialog close preserve newest-only state without creating another workflow authority."
+    ],
+    "pageDirectionEvidence": [
+      "Outcome Learning stays inside Prospect Candidates.",
+      "Account Review remains the detail entry for underlying current evidence.",
+      "Existing Owner Queue remains the action surface for owner review work."
+    ],
+    "acceptance": {
+      "technical": [
+        "Constitution integrity, Agent Portfolio, merge boundaries, AI Gateway boundary, OpenAPI and BossAI OS typecheck passed in the current verification run.",
+        "The current constitutional preflight validates against Constitution 2026.08.30.1 / r7.",
+        "Radar architecture verification remains fail-closed on governance drift."
+      ],
+      "business": [
+        "No close probability, purchase prediction, causal claim, CRM authority or automatic outreach is introduced.",
+        "Owner-entered confirmed values remain bounded historical evidence and are not automatically Revenue or ROI."
+      ],
+      "userExperience": [
+        "Rapid account switching and refreshes cannot repopulate an older account or stale result into the newest view.",
+        "Small or incomplete historical samples remain visibly insufficient instead of being promoted to winner/best recommendations."
+      ]
+    },
+    "aiUserResultEvidence": {
+      "applicable": true,
+      "saves": "Reduces manual reconciliation of historical governed outcomes and stale UI state.",
+      "gains": "Provides lineage-safe descriptive context while keeping the newest owner-selected account and result visible.",
+      "reducesDifficulty": "Request ordering, lineage checks and sample-state boundaries are enforced by the product instead of requiring manual interpretation.",
+      "evidence": [
+        "capabilityClassification=ai_assistant",
+        "createsSecondAgentRuntime=false",
+        "performsUnapprovedExternalActions=false"
+      ]
+    },
+    "failureLearning": {
+      "incidents": [
+        "Older asynchronous account/detail responses could overwrite a newer owner selection.",
+        "Older Constitution declarations caused the current fixed release harness to fail closed."
+      ],
+      "ruleOrTestReferences": [
+        "governance/current-batch.preflight.json",
+        "public/latest-request.js",
+        "tests/latest-request.test.ts",
+        "tests/account-review.test.ts"
+      ]
+    },
+    "productOwnerDecision": {
+      "owner": "BossAI Radar product owner",
+      "decision": "approved_for_claimed_level",
+      "rationale": "This evidence claims only Completion Level 2 technical/functional closure and does not claim production launch or real-user validation."
+    },
+    "newUserWithoutGuidance": {
+      "validated": false,
+      "evidence": "No unguided real-new-customer acceptance is claimed for this batch."
+    }
   },
   "machineChecks": [
     { "checkId": "constitution-integrity", "executionMode": "rerun_at_gate" },
@@ -31,6 +93,7 @@
     { "checkId": "agent-portfolio", "executionMode": "rerun_at_gate" },
     { "checkId": "merge-boundaries", "executionMode": "rerun_at_gate" },
     { "checkId": "ai-gateway-boundary", "executionMode": "rerun_at_gate" },
+    { "checkId": "execution-topology", "executionMode": "rerun_at_gate" },
     { "checkId": "openapi", "executionMode": "rerun_at_gate" },
     { "checkId": "typecheck", "executionMode": "rerun_at_gate" },
     { "checkId": "radar-build", "executionMode": "rerun_at_gate" },
@@ -38,15 +101,14 @@
     { "checkId": "frontend-syntax", "executionMode": "rerun_at_gate" },
     { "checkId": "i18n", "executionMode": "rerun_at_gate" },
     { "checkId": "bossai-migration-boundary", "executionMode": "rerun_at_gate" },
-    { "checkId": "intelligence-agent-manager-integration", "executionMode": "rerun_at_gate" },
-    { "checkId": "real-entry:radar-intelligence-manager-plugin-v0.1.0", "executionMode": "rerun_at_gate" }
+    { "checkId": "outcome-learning-regression", "executionMode": "rerun_at_gate" },
+    { "checkId": "real-entry:account-review-race-safety-p10-8-2026-08-20", "executionMode": "rerun_at_gate" }
   ],
   "unresolvedGaps": [
-    "The Intelligence Agent package has no production release signature.",
-    "The plugin is not formally registered as an AI Employee.",
-    "Production deployment must provision a protected BossAI OS identity with the required Agent permissions.",
-    "The product and plugin have not been validated by external real users or commercial orders.",
-    "Automatic source collection and external actions remain intentionally outside the Agent plugin."
+    "Completion Level 3 or higher is not claimed because unguided real-new-user validation is not recorded.",
+    "Production deployment and public-release approval are outside this batch.",
+    "External customer-facing actions remain separately approval-gated and outside Outcome Learning.",
+    "No predictive Sales scoring or causal inference is authorized."
   ],
-  "generatedAt": "2026-08-05T08:19:00+08:00"
+  "generatedAt": "2026-09-07T18:40:00+08:00"
 }

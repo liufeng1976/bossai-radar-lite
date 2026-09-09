@@ -1,0 +1,64 @@
+{
+  "schema": "bossai.public-release.v1",
+  "product": {
+    "id": "bossai-radar-lite",
+    "name": "BossAI Radar Lite",
+    "version": "0.7.1",
+    "classification": "ai-assistant-market-intelligence",
+    "positioning": "A source-available market-intelligence radar that collects bounded public evidence, ranks business opportunities deterministically and produces reviewable CEO briefs and prospect-research workflows."
+  },
+  "repository": "https://github.com/liufeng1976/bossai-radar-lite",
+  "distribution": "source-available-noncommercial",
+  "license": {
+    "file": "LICENSE",
+    "commercialAuthorization": "docs/COMMERCIAL_LICENSE.md"
+  },
+  "authorities": {
+    "runtime": "bossai-os",
+    "commercial": "bossai-headquarters-commerce",
+    "ownsRuntime": false,
+    "ownsApprovalAuditMemory": false,
+    "ownsAiGateway": false,
+    "ownsBilling": false,
+    "ownsIntelligenceEmployeeRuntime": false
+  },
+  "publicCapabilities": [
+    "bounded public-source collection",
+    "deterministic opportunity scoring",
+    "must-read quick-scan skip intelligence briefs",
+    "local SQLite evidence and prospect research",
+    "read-only Agent Skill and MCP integration",
+    "governed Intelligence and Sales handoff through BossAI OS"
+  ],
+  "commercialConversion": {
+    "document": "docs/COMMERCIAL_LICENSE.md",
+    "productBoundary": "docs/LITE_VS_PRO.md",
+    "requiresWrittenAuthorization": true,
+    "commercialUseIncludedInPublicLicense": false
+  },
+  "github": {
+    "description": "Source-available AI market-intelligence radar for public evidence, deterministic opportunity scoring, prospect research, MCP and governed BossAI OS handoffs.",
+    "topics": [
+      "market-intelligence",
+      "business-intelligence",
+      "competitive-intelligence",
+      "mcp",
+      "ai-agent",
+      "opportunity-radar",
+      "startup-research",
+      "reddit",
+      "hacker-news",
+      "prospect-research"
+    ],
+    "releaseTitleTemplate": "BossAI Radar Lite v{version}"
+  },
+  "checks": [
+    "npm run verify:public-release",
+    "npm run release:check"
+  ],
+  "claims": {
+    "publiclyLaunched": false,
+    "productionReady": false,
+    "realUserValidated": false
+  }
+}
