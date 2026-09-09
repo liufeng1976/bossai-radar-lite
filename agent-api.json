@@ -1,0 +1,85 @@
+{
+  "schema": "bossai.agent-api.v1",
+  "id": "bossai-radar-lite",
+  "name": "BossAI Radar Lite Agent API",
+  "version": "0.7.1",
+  "classification": "AI Assistant",
+  "description": "Evidence-first market intelligence API with HTTP, MCP and BossAI OS governed handoff support.",
+  "authority": {
+    "runtime": "bossai-os",
+    "approval": "bossai-os",
+    "audit": "bossai-os",
+    "aiGateway": "bossai-os",
+    "billing": "bossai-headquarters-commerce",
+    "ownsRuntime": false
+  },
+  "transports": {
+    "http": {
+      "defaultBaseUrl": "http://127.0.0.1:3080",
+      "discovery": "/.well-known/bossai-agent-api.json",
+      "openapi": "/api/agent/openapi",
+      "health": "/api/health"
+    },
+    "mcp": {
+      "transport": "stdio",
+      "command": "node dist/src/mcp-server.js"
+    },
+    "cli": {
+      "command": "node dist/src/agent-cli.js"
+    }
+  },
+  "authentication": {
+    "publicRead": "loopback/public-read routes follow Radar binding policy",
+    "adminWrite": "RADAR_ADMIN_API_KEY",
+    "bossaiOs": "BossAI OS credentials remain configured only in Radar's governed BossAI OS client"
+  },
+  "operations": [
+    { "id": "capabilities", "method": "GET", "path": "/api/agent/capabilities", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "overview", "method": "GET", "path": "/api/overview", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "opportunities", "method": "GET", "path": "/api/opportunities", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "prospects", "method": "GET", "path": "/api/prospects", "access": "read", "riskLevel": "L2", "requiresHumanApproval": false },
+    { "id": "evidence", "method": "GET", "path": "/api/evidence", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "runs", "method": "GET", "path": "/api/runs", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "latest-report", "method": "GET", "path": "/api/report/latest", "access": "read", "riskLevel": "L1", "requiresHumanApproval": false },
+    { "id": "scan", "method": "POST", "path": "/api/scan", "access": "write", "riskLevel": "L3", "requiresHumanApproval": true },
+    { "id": "delegate-opportunity", "method": "POST", "path": "/api/admin/opportunities/{id}/delegate", "access": "write", "riskLevel": "L3", "requiresHumanApproval": true, "targetAuthority": "bossai-os" },
+    { "id": "delegate-prospect", "method": "POST", "path": "/api/admin/prospects/{id}/delegate", "access": "write", "riskLevel": "L3", "requiresHumanApproval": true, "targetAuthority": "bossai-os" }
+  ],
+  "bossaiConnector": {
+    "adapterId": "bossai-radar-lite",
+    "readOperations": ["capabilities", "overview", "opportunities", "prospects", "evidence", "runs", "latest-report"],
+    "writeOperations": [],
+    "governedWriteOperations": [
+      {
+        "id": "scan",
+        "requirements": ["Radar write authorization", "explicit Agent host enablement"],
+        "mcpEnableFlag": "RADAR_MCP_ALLOW_SCAN=true"
+      },
+      {
+        "id": "delegate-opportunity",
+        "requirements": ["RADAR_ADMIN_API_KEY", "BossAI OS employee configuration", "human review"]
+      },
+      {
+        "id": "delegate-prospect",
+        "requirements": ["RADAR_ADMIN_API_KEY", "verified prospect evidence", "BossAI OS employee configuration", "human review"]
+      }
+    ],
+    "persistentEmployeeExecution": "bossai-os",
+    "automaticExternalActions": false
+  },
+  "mcpToolMapping": {
+    "overview": "radar_overview",
+    "opportunities": "radar_list_opportunities",
+    "evidence": "radar_list_evidence",
+    "latest-report": "radar_latest_report",
+    "scan": "radar_run_scan",
+    "leadWriteOptional": ["radar_update_lead", "radar_add_lead_activity"]
+  },
+  "safety": {
+    "defaultMcpScan": false,
+    "defaultMcpLeadWrite": false,
+    "deleteLeadToolExposedToMcp": false,
+    "automaticCustomerMessaging": false,
+    "automaticExternalActions": false
+  }
+}

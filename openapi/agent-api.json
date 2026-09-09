@@ -1,0 +1,24 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BossAI Radar Lite Agent API",
+    "version": "0.7.1",
+    "description": "Evidence-first Agent API. Public read surfaces are safe for bounded agent use; write/delegation surfaces remain behind Radar admin and BossAI OS governance."
+  },
+  "servers": [{ "url": "http://127.0.0.1:3080" }],
+  "paths": {
+    "/api/health": { "get": { "operationId": "health", "responses": { "200": { "description": "Health" } } } },
+    "/.well-known/bossai-agent-api.json": { "get": { "operationId": "discoverAgentApi", "responses": { "200": { "description": "Agent API manifest" } } } },
+    "/api/agent/openapi": { "get": { "operationId": "getAgentOpenApi", "responses": { "200": { "description": "OpenAPI document" } } } },
+    "/api/agent/capabilities": { "get": { "operationId": "listAgentCapabilities", "responses": { "200": { "description": "Agent operations and governance metadata" } } } },
+    "/api/overview": { "get": { "operationId": "getOverview", "responses": { "200": { "description": "Radar overview" } } } },
+    "/api/opportunities": { "get": { "operationId": "listOpportunities", "parameters": [{ "in": "query", "name": "limit", "schema": { "type": "integer", "minimum": 1, "maximum": 200 } }], "responses": { "200": { "description": "Ranked opportunities" } } } },
+    "/api/prospects": { "get": { "operationId": "listProspects", "parameters": [{ "in": "query", "name": "limit", "schema": { "type": "integer", "minimum": 1, "maximum": 500 } }, { "in": "query", "name": "status", "schema": { "type": "string" } }], "responses": { "200": { "description": "Prospect candidates" } } } },
+    "/api/evidence": { "get": { "operationId": "listEvidence", "responses": { "200": { "description": "Collected evidence" } } } },
+    "/api/runs": { "get": { "operationId": "listRuns", "responses": { "200": { "description": "Radar runs" } } } },
+    "/api/report/latest": { "get": { "operationId": "getLatestReport", "responses": { "200": { "description": "Latest structured report" } } } },
+    "/api/scan": { "post": { "operationId": "startScan", "description": "Write operation; requires Radar write access and must not be exposed as BossAI connector.read.", "responses": { "200": { "description": "Scan accepted/completed according to Radar service semantics" }, "403": { "description": "Write access denied" } } } },
+    "/api/admin/opportunities/{id}/delegate": { "post": { "operationId": "delegateOpportunityToBossAi", "description": "Admin-governed delegation to BossAI OS.", "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Delegation result" }, "403": { "description": "Admin authorization required" } } } },
+    "/api/admin/prospects/{id}/delegate": { "post": { "operationId": "delegateProspectToBossAi", "description": "Admin-governed delegation to BossAI OS.", "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Delegation result" }, "403": { "description": "Admin authorization required" } } } }
+  }
+}
