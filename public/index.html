@@ -22,9 +22,10 @@
           <a class="nav-item active" href="#overview"><span>01</span><b data-i18n="nav.overview">CEO 总览</b></a>
           <a class="nav-item" href="#daily-brief"><span>02</span><b data-i18n="nav.brief">今日简报</b></a>
           <a class="nav-item" href="#opportunities"><span>03</span><b data-i18n="nav.opportunities">机会优先级</b></a>
-          <a class="nav-item" href="#evidence"><span>04</span><b data-i18n="nav.evidence">证据库</b></a>
-          <a class="nav-item" href="#operations"><span>05</span><b data-i18n="nav.operations">运行状态</b></a>
-          <a class="nav-item" id="leadNavItem" href="/leads.html" data-preserve-language><span>06</span><b data-i18n="nav.leads">商业线索</b></a>
+          <a class="nav-item" href="#prospects"><span>04</span><b data-i18n="nav.prospects">潜客候选</b></a>
+          <a class="nav-item" href="#evidence"><span>05</span><b data-i18n="nav.evidence">证据库</b></a>
+          <a class="nav-item" href="#operations"><span>06</span><b data-i18n="nav.operations">运行状态</b></a>
+          <a class="nav-item" id="leadNavItem" href="/leads.html" data-preserve-language><span>07</span><b data-i18n="nav.leads">商业线索</b></a>
         </nav>
 
         <div class="sidebar-note">
@@ -86,7 +87,7 @@
           <article class="metric-card">
             <span data-i18n="metric.sources">覆盖来源</span>
             <strong id="sourceMetric">0</strong>
-            <small data-i18n="metric.sourcesHelp">Reddit · HN · GitHub</small>
+            <small data-i18n="metric.sourcesHelp">Reddit · HN · GitHub · ArXiv · RSS · 企业网站</small>
           </article>
           <article class="metric-card">
             <span data-i18n="metric.runs">扫描次数</span>
@@ -169,6 +170,117 @@
           </div>
         </section>
 
+        <section class="section" id="prospects">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="section.prospectDiscovery">潜客发现</p>
+              <h3 data-i18n="section.prospects">待审核企业候选</h3>
+            </div>
+            <span class="brief-generated" id="prospectDiscoveryStatus" data-i18n="prospect.notConfigured">未配置发现源</span>
+          </div>
+          <p class="content-ideas-intro" data-i18n="prospect.description">从显式配置的公开企业名录、展会和会员页发现企业官网，再由官网证据补强。候选不会自动写入 CRM。</p>
+          <div class="outcome-summary-panel" id="outcomeSummaryPanel">
+            <div class="outcome-summary-heading">
+              <div>
+                <strong data-i18n="outcome.summaryTitle">经营结果</strong>
+                <small data-i18n="outcome.summaryIntro">这里只统计老板已经复核的结果与仍待确认的闭环，不把员工完成或销售资格判断当成收入。</small>
+              </div>
+              <span data-i18n="outcome.summaryBoundary">员工完成 ≠ 成交 / 收入 / ROI</span>
+            </div>
+            <div class="outcome-summary-cards" id="outcomeSummaryCards"></div>
+            <div class="outcome-summary-value" id="outcomeSummaryValue"></div>
+          </div>
+          <div class="outcome-learning-panel" id="outcomeLearningPanel">
+            <div class="outcome-learning-heading">
+              <div>
+                <strong data-i18n="outcomeLearning.title">结果复盘</strong>
+                <small data-i18n="outcomeLearning.intro">按历史已闭环样本描述来源、官网证据方式、业务渠道和 ICP 词汇覆盖，不形成销售评分或预测。</small>
+              </div>
+              <span data-i18n="outcomeLearning.boundary">历史描述 ≠ 因果 / 成交概率</span>
+            </div>
+            <div class="outcome-learning-readiness" id="outcomeLearningReadiness"></div>
+            <div class="outcome-learning-views" id="outcomeLearningViews"></div>
+            <div class="outcome-learning-drilldown" id="outcomeLearningDrilldown" hidden></div>
+            <div class="outcome-learning-actions">
+              <button class="button ghost" id="outcomeLearningReviewPending" type="button" hidden data-i18n="outcomeLearning.reviewPending">去处理结果待审</button>
+            </div>
+          </div>
+          <div class="owner-review-queue-panel" id="ownerReviewQueuePanel">
+            <div class="owner-review-queue-heading">
+              <div>
+                <strong data-i18n="prospect.ownerQueueTitle">老板待审账户</strong>
+                <small data-i18n="prospect.ownerQueueIntro">按当前责任和下一步动作排序，不按成交概率排序。先处理需要你决定的账户，再处理证据补全和可立即推进事项。</small>
+              </div>
+              <span class="owner-review-queue-boundary" data-i18n="prospect.ownerQueueBoundary">处理顺序 ≠ 购买意图 / 成交概率</span>
+            </div>
+            <div class="owner-review-queue-summary" id="ownerReviewQueueSummary"></div>
+            <div class="owner-review-queue-filters" id="ownerReviewQueueFilters">
+              <button class="owner-review-filter active" type="button" data-owner-queue-filter="all" data-i18n="prospect.ownerQueueFilter.all">全部待办</button>
+              <button class="owner-review-filter" type="button" data-owner-queue-filter="decision-required" data-i18n="prospect.ownerQueueFilter.decision-required">老板决定</button>
+              <button class="owner-review-filter" type="button" data-owner-queue-filter="execution-exception" data-i18n="prospect.ownerQueueFilter.execution-exception">执行异常</button>
+              <button class="owner-review-filter" type="button" data-owner-queue-filter="result-review" data-i18n="prospect.ownerQueueFilter.result-review">结果待审</button>
+              <button class="owner-review-filter" type="button" data-owner-queue-filter="action-ready" data-i18n="prospect.ownerQueueFilter.action-ready">可立即推进</button>
+              <button class="owner-review-filter" type="button" data-owner-queue-filter="waiting" data-i18n="prospect.ownerQueueFilter.waiting">等员工</button>
+            </div>
+            <div class="owner-review-queue-list" id="ownerReviewQueueList"></div>
+            <div class="owner-review-queue-more-row">
+              <button class="button ghost compact" id="ownerReviewQueueMore" type="button" hidden data-i18n="prospect.ownerQueueMore">继续查看</button>
+            </div>
+          </div>
+          <form class="prospect-search" id="prospectSearchForm">
+            <label class="prospect-search-field">
+              <span data-i18n="prospect.searchLabel">直接描述你要找的企业</span>
+              <input id="prospectSearchInput" type="search" maxlength="400" autocomplete="off" data-i18n-placeholder="prospect.searchPlaceholder" placeholder="例如：美国宠物用品批发商 智能喂食器 distributors" />
+            </label>
+            <button class="button ghost" id="prospectPlanButton" type="button" data-i18n="prospect.planButton">扩展搜索方向</button>
+            <button class="button primary" id="prospectSearchButton" type="submit" data-i18n="prospect.searchButton">发现潜客</button>
+            <div class="prospect-plan-suggestions" id="prospectPlanSuggestions" hidden></div>
+            <small id="prospectSearchHint" data-i18n="prospect.searchNotConfigured">搜索/地图发现未配置；仍可使用公开目录/展会种子。</small>
+          </form>
+          <div class="prospect-channel-status" id="prospectChannelStatus"></div>
+          <div class="trade-import-panel">
+            <div class="trade-import-heading">
+              <div>
+                <strong data-i18n="trade.title">贸易/海关记录证据</strong>
+                <small data-i18n="trade.description">导入你有权使用的 CSV/TSV。只保留公司级交易证据，不抓付费墙、不自动创建潜客或 CRM。</small>
+              </div>
+              <span id="tradeRecordStats" class="brief-generated" data-i18n="trade.emptyStats">尚未导入</span>
+            </div>
+            <div class="trade-import-actions">
+              <input id="tradeRecordFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" />
+              <button class="button ghost" id="tradeRecordPreviewButton" type="button" data-i18n="trade.previewButton">预览字段映射</button>
+              <button class="button ghost" id="tradeRecordImportButton" type="button" data-i18n="trade.importButton" disabled>确认导入</button>
+            </div>
+            <small class="trade-import-note" id="tradeRecordImportNote" data-i18n="trade.safeNote">最多 2 MB / 5000 行；个人邮箱、个人电话等列不会进入贸易证据模型。</small>
+            <div class="trade-import-preview" id="tradeRecordPreview" hidden></div>
+            <form class="trade-filter-form" id="tradeRecordFilterForm">
+              <input id="tradeRecordQuery" type="search" maxlength="160" autocomplete="off" data-i18n-placeholder="trade.filterQuery" placeholder="企业、商品或来源" />
+              <input id="tradeRecordHs" type="search" maxlength="40" autocomplete="off" data-i18n-placeholder="trade.filterHs" placeholder="HS 编码" />
+              <input id="tradeRecordCountry" type="search" maxlength="120" autocomplete="off" data-i18n-placeholder="trade.filterCountry" placeholder="国家/地区" />
+              <select id="tradeRecordRole" aria-label="Trade role">
+                <option value="" data-i18n="trade.filterAllRoles">全部角色</option>
+                <option value="buyer" data-i18n="trade.role.buyer">买方</option>
+                <option value="importer" data-i18n="trade.role.importer">进口商</option>
+                <option value="supplier" data-i18n="trade.role.supplier">供应商</option>
+                <option value="exporter" data-i18n="trade.role.exporter">出口商</option>
+                <option value="unknown" data-i18n="trade.role.unknown">角色未知</option>
+              </select>
+              <input id="tradeRecordDateFrom" type="date" aria-label="Trade date from" />
+              <input id="tradeRecordDateTo" type="date" aria-label="Trade date to" />
+              <button class="button ghost compact" type="submit" data-i18n="trade.filterApply">筛选</button>
+              <button class="text-button" id="tradeRecordFilterReset" type="button" data-i18n="trade.filterReset">清除</button>
+            </form>
+            <div class="trade-company-summary" id="tradeCompanySummary"></div>
+            <div class="trade-record-list" id="tradeRecordList"></div>
+          </div>
+          <div class="opportunity-grid" id="prospectGrid">
+            <div class="empty-state" data-i18n="empty.prospects">暂无潜客候选。配置公开发现源后运行扫描。</div>
+          </div>
+          <div class="prospect-grid-more-row">
+            <button class="button ghost compact" id="prospectGridMore" type="button" hidden data-i18n="prospect.more">继续查看候选</button>
+          </div>
+        </section>
+
         <section class="two-column">
           <div class="section panel" id="evidence">
             <div class="section-heading compact">
@@ -206,6 +318,108 @@
         </footer>
       </main>
     </div>
+
+    <dialog class="license-dialog account-review-dialog" id="accountReviewDialog">
+      <div class="license-card account-review-card">
+        <button class="dialog-close" id="accountReviewClose" type="button" data-i18n-aria-label="common.close" aria-label="关闭">×</button>
+        <div class="account-review-heading">
+          <div>
+            <p class="eyebrow" data-i18n="prospect.accountReviewEyebrow">账户全景</p>
+            <h3 id="accountReviewTitle" data-i18n="prospect.accountReviewTitle">外贸潜客 Account Review</h3>
+            <p class="license-intro" id="accountReviewSubtitle" data-i18n="prospect.accountReviewIntro">把官网、业务渠道、历史贸易、Intelligence 与 Sales 审核放在同一条证据链里；不把历史行为或联系方式解释成当前购买意图。</p>
+          </div>
+          <span class="account-review-stage" id="accountReviewStage"></span>
+        </div>
+        <div class="account-review-body" id="accountReviewBody"></div>
+        <div class="account-review-result" id="accountReviewResult" hidden></div>
+        <div class="account-review-actions" id="accountReviewActions"></div>
+      </div>
+    </dialog>
+
+    <dialog class="license-dialog owner-decision-dialog" id="ownerDecisionDialog">
+      <form class="license-card owner-decision-card" id="ownerDecisionForm">
+        <button class="dialog-close" id="ownerDecisionClose" type="button" data-i18n-aria-label="common.close" aria-label="关闭">×</button>
+        <p class="eyebrow" data-i18n="prospect.ownerDecisionEyebrow">老板决策留痕</p>
+        <h3 id="ownerDecisionTitle" data-i18n="prospect.ownerDecisionTitle">记录本次账户决策</h3>
+        <p class="license-intro" id="ownerDecisionIntro" data-i18n="prospect.ownerDecisionIntro">批准进入 Sales 或排除潜客前，记录主要理由和必要说明。系统会同时保存当时的证据摘要，但不会生成成交概率或自动执行 CRM/外联。</p>
+        <div class="owner-decision-context" id="ownerDecisionContext"></div>
+        <label class="browser-evidence-field">
+          <span data-i18n="prospect.ownerDecisionReason">主要理由</span>
+          <select id="ownerDecisionReason" required></select>
+        </label>
+        <label class="browser-evidence-field">
+          <span data-i18n="prospect.ownerDecisionNote">决策说明</span>
+          <textarea id="ownerDecisionNote" rows="5" maxlength="1000" data-i18n-placeholder="prospect.ownerDecisionNotePlaceholder" placeholder="可补充你为什么批准/排除；选择“其他”时必须填写。"></textarea>
+        </label>
+        <div class="browser-evidence-actions">
+          <button class="button ghost" id="ownerDecisionCancel" type="button" data-i18n="common.cancel">取消</button>
+          <button class="button primary" id="ownerDecisionSubmit" type="submit" data-i18n="prospect.ownerDecisionSubmit">记录决策</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="license-dialog owner-decision-dialog" id="outcomeReviewDialog">
+      <form class="license-card owner-decision-card" id="outcomeReviewForm">
+        <button class="dialog-close" id="outcomeReviewClose" type="button" data-i18n-aria-label="common.close" aria-label="关闭">×</button>
+        <p class="eyebrow" data-i18n="outcome.reviewEyebrow">经营结果复核</p>
+        <h3 data-i18n="outcome.reviewTitle">确认这次执行实际产生了什么结果</h3>
+        <p class="license-intro" data-i18n="outcome.reviewIntro">Sales 结果只是员工报告。只有你在这里确认后，Radar 才会把结果标为已确认；金额永远不会从员工文本自动提取。</p>
+        <div class="owner-decision-context" id="outcomeReviewContext"></div>
+        <label class="browser-evidence-field">
+          <span data-i18n="outcome.reviewDecision">老板判断</span>
+          <select id="outcomeReviewDecision" required>
+            <option value="confirm-outcome" data-i18n="outcome.decision.confirm-outcome">确认结果有效</option>
+            <option value="observe" data-i18n="outcome.decision.observe">继续观察</option>
+            <option value="no-value" data-i18n="outcome.decision.no-value">结果无价值</option>
+          </select>
+        </label>
+        <label class="browser-evidence-field">
+          <span data-i18n="outcome.reviewSummary">结果说明</span>
+          <textarea id="outcomeReviewSummary" rows="5" maxlength="1000" required data-i18n-placeholder="outcome.reviewSummaryPlaceholder" placeholder="记录你实际确认到的结果、为什么有效/无价值，或还需要观察什么。"></textarea>
+        </label>
+        <div class="outcome-value-fields" id="outcomeValueFields">
+          <label class="browser-evidence-field">
+            <span data-i18n="outcome.reviewValueAmount">已知经营价值（可选，仅老板输入）</span>
+            <input id="outcomeReviewValueAmount" type="number" min="0" step="0.01" inputmode="decimal" />
+          </label>
+          <label class="browser-evidence-field outcome-currency-field">
+            <span data-i18n="outcome.reviewValueCurrency">币种</span>
+            <input id="outcomeReviewValueCurrency" type="text" maxlength="3" autocomplete="off" placeholder="USD" />
+          </label>
+        </div>
+        <small class="outcome-value-boundary" data-i18n="outcome.reviewValueBoundary">不填金额表示“结果已确认，但经营价值金额未知”。员工报告中的金额不会自动带入。</small>
+        <div class="browser-evidence-actions">
+          <button class="button ghost" id="outcomeReviewCancel" type="button" data-i18n="common.cancel">取消</button>
+          <button class="button primary" id="outcomeReviewSubmit" type="submit" data-i18n="outcome.reviewSubmit">记录结果复核</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="license-dialog browser-evidence-dialog" id="browserEvidenceDialog">
+      <form class="license-card browser-evidence-card" id="browserEvidenceForm">
+        <button class="dialog-close" id="browserEvidenceClose" type="button" data-i18n-aria-label="common.close" aria-label="关闭">×</button>
+        <p class="eyebrow" data-i18n="prospect.browserEvidenceDialogEyebrow">浏览器证据补全</p>
+        <h3 data-i18n="prospect.browserEvidenceDialogTitle">补全 JavaScript 官网公开证据</h3>
+        <p class="license-intro" data-i18n="prospect.browserEvidenceDialogIntro">Radar 不运行通用 Browser Agent。请在你控制的浏览器中打开目标官网，等待页面渲染完成后，把该页面的 rendered HTML 回填到这里。只接受同一官网域名，原始 HTML 不落库。</p>
+        <div class="browser-evidence-contract" id="browserEvidenceContract"></div>
+        <label class="browser-evidence-field">
+          <span data-i18n="prospect.browserEvidencePageUrl">渲染页面 URL</span>
+          <input id="browserEvidencePageUrl" type="url" maxlength="1000" required />
+        </label>
+        <label class="browser-evidence-field">
+          <span data-i18n="prospect.browserEvidenceSourceReference">来源备注</span>
+          <input id="browserEvidenceSourceReference" type="text" maxlength="240" data-i18n-placeholder="prospect.browserEvidenceSourcePlaceholder" placeholder="例如：老板受控 Chrome 窗口" />
+        </label>
+        <label class="browser-evidence-field">
+          <span data-i18n="prospect.browserEvidenceHtml">Rendered HTML</span>
+          <textarea id="browserEvidenceHtml" rows="12" maxlength="100000" required data-i18n-placeholder="prospect.browserEvidenceHtmlPlaceholder" placeholder="粘贴浏览器渲染后的 HTML（最多 100000 字符）"></textarea>
+        </label>
+        <div class="browser-evidence-actions">
+          <button class="button ghost" id="browserEvidenceCancel" type="button" data-i18n="common.cancel">取消</button>
+          <button class="button primary" id="browserEvidenceSubmit" type="submit" data-i18n="prospect.browserEvidenceSubmit">提交证据并重新核验</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog class="license-dialog" id="licenseDialog">
       <form method="dialog" class="license-card">
