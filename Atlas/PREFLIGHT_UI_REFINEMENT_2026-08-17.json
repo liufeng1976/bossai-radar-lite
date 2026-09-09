@@ -1,0 +1,30 @@
+{
+  "schema": "bossai.product-ui-preflight.v1",
+  "date": "2026-08-17",
+  "product": "BossAI Radar Lite",
+  "highestCommercialGoal": "让老板和经营者快速看懂海外市场今天发生了什么、为什么重要、哪些机会值得验证，以及证据是否足以采取下一步。",
+  "largestUserGap": "主 UI 正处于并行情报/潜客/贸易证据开发批次；当前首页已具备 CEO 总结、今日简报、机会优先级和证据库，但四张系统统计指标仍先于今日简报。当前更高风险是覆盖并行 UI 或让 Demo/Manager 状态冒充真实市场与员工执行。",
+  "userProblem": "经营者必须能够区分真实公开证据、合成 Demo、待审核潜客和已提交给 BossAI OS 的员工任务状态，不能把演示、候选或 queued 状态误解为真实成交、真实客户或已完成执行。",
+  "userVisibleChange": "本批不覆盖并行 UI。验证 CEO 总结、日报、机会、证据、潜客候选和来源状态均有真实/演示/未配置边界；验证 Demo 机会不可委派；验证 Manager 提交不冒充完成；保留后续把今日简报提升到统计指标之前的页面级精修项。",
+  "scope": [
+    "只读审查 public/index.html、public/app.js、public/i18n.js 的当前用户入口与演示边界",
+    "运行 build/test/frontend/i18n/BossAI migration 固定门禁",
+    "记录首页剩余信息层级问题，不覆盖当前并行 UI"
+  ],
+  "outOfScope": [
+    "修改 Agent Runtime、Scheduler、MCP、BossAI OS Manager 或 Provider 路径",
+    "覆盖 public/index.html、public/app.js、public/i18n.js、public/styles.css 当前并行修改",
+    "开启 scan/lead-write 权限",
+    "自动客户消息、删除工具或员工插件生命周期操作",
+    "commit、push、deploy、release"
+  ],
+  "realEntryAcceptance": [
+    "首页明确提供 CEO 总结、今日简报、机会优先级、证据库和来源运行状态",
+    "Demo 数据必须在证据、机会、日报或状态中明确标记，不得委派为真实员工任务",
+    "未配置的数据源和潜客发现能力要显示未配置/跳过，而不是伪造结果",
+    "BossAI OS 委派成功只表示 offered/queued/running 等真实状态，不冒充 completed/approved/published",
+    "npm run check 通过；若并行现场有真实失败则原样记录"
+  ],
+  "targetCompletionLevel": 2,
+  "completionClaimBoundary": "本批只声明 Radar Lite 当前用户入口和证据真值边界经过机器验证；不声明生产上线、真实市场验证、真实客户成交或 AI 员工正式注册。"
+}
